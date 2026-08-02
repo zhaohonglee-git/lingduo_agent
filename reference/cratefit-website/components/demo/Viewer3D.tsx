@@ -7,8 +7,10 @@ import {
   create3DScene,
   renderPackedBin3D,
   animate,
+  animatePacking,
   type SceneComponents,
   type Render3DResult,
+  type PackingAnimationState,
 } from '@cratefit/viz';
 import { useDemoStore } from '@/lib/stores/demo-store';
 import { HoverInfoCard } from './HoverInfoCard';
@@ -87,6 +89,7 @@ function Viewer3DImpl({ packedBin }: Viewer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<SceneComponents | null>(null);
   const renderResultRef = useRef<Render3DResult | null>(null);
+  const packingAnimRef = useRef<PackingAnimationState | null>(null);
   const raycasterRef = useRef<{ raycaster: Raycaster; mouse: Vector2 } | null>(null);
   const initialCameraRef = useRef<{ position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } } | null>(null);
   const cogMeshRef = useRef<unknown>(null);
@@ -201,6 +204,15 @@ function Viewer3DImpl({ packedBin }: Viewer3DProps) {
         components.controls
       );
 
+      // Start drop animation (boxes fall one by one to show packing order)
+      // Stop any previous animation first
+      packingAnimRef.current?.stop();
+      packingAnimRef.current = animatePacking(renderResult.itemMeshes, {
+        animationType: 'drop',
+        itemDuration: 400,
+        itemDelay: 100,
+      });
+
       // Handle resize
       const resizeObserver = new ResizeObserver(() => {
         components.handleResize();
@@ -312,6 +324,8 @@ function Viewer3DImpl({ packedBin }: Viewer3DProps) {
         canvas.removeEventListener('resetView', handleResetView);
         canvas.removeEventListener('mousemove', handleMouseMove);
         canvas.removeEventListener('mouseleave', handleMouseLeave);
+        packingAnimRef.current?.stop();
+        packingAnimRef.current = null;
         if (sceneRef.current) {
           sceneRef.current.dispose();
           sceneRef.current = null;
