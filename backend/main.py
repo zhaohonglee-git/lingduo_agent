@@ -45,11 +45,11 @@ def get_agent() -> PackAgent:
 # ============================================================================
 
 
-async def _sse_chat(message: str):
+async def _sse_chat(message: str, history: list[dict] | None = None):
     """SSE 事件流"""
     try:
         agent = get_agent()
-        async for event in agent.chat(message):
+        async for event in agent.chat(message, history=history):
             t = event["type"]
             c = event.get("content")
 
@@ -77,11 +77,12 @@ async def chat(request: Request):
     """AI 对话接口 (SSE)"""
     body = await request.json()
     message = body.get("message", "").strip()
+    history = body.get("history")
     if not message:
         return JSONResponse(status_code=400, content={"error": "消息不能为空"})
 
     return StreamingResponse(
-        _sse_chat(message),
+        _sse_chat(message, history=history),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
     )

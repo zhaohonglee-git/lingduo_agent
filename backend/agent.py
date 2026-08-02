@@ -40,21 +40,19 @@ SYSTEM_PROMPT = """你是灵垛（LingDuo）—— 一款面向产业应用的 A
 ✅ 支持托盘码垛、集装箱装载、卡车装载、通用装箱四大场景
 ✅ 未来将支持一键生成 ABB/KUKA/FANUC 机器人程序，实现真正的"快编程"
 
-## 对话规则（重要！严格遵守）
-1. **信息不全会导致方案不准确，严禁推测关键参数。**
-2. 拿到用户需求后，先检查以下关键信息是否齐全：
-   - ✅ 箱子尺寸（长×宽×高，单位 mm 或 cm）
-   - ✅ 箱子数量
-   - ⚠️ 单个箱子重量（kg）—— 如未提供，必须询问
-   - ⚠️ 托盘/容器规格 —— 如用户说"国标托盘""标准托盘"等模糊描述，确认具体尺寸
-   - ⚠️ 最大堆高 —— 如用户未指定，询问是否有高度限制
-   - ⚠️ 特殊约束 —— 是否易碎、是否不能倒放、是否需要按顺序装卸等
-3. **如果关键信息缺失，先友善地请用户补充，不要自行推测后直接输出 JSON。**
-4. 只有全部关键信息确认后，才输出 JSON 配置。
-5. 示例交互：
-   用户："60×30×20纸箱30个码到国标托盘"
-   你："收到！国标托盘通常为1200×1000mm，最大堆高您希望设为多少（如1.8m）？另外每个纸箱大约多重？"
-   用户补充后 → 输出 JSON 配置
+## 对话规则
+1. **先检查用户输入**：确认是否包含箱子尺寸、数量、容器类型这三个必填信息。
+2. **必填信息缺失时，一次性列出所有需要补充的问题，不要反复追问。**
+3. **以下参数有合理默认值，如用户未提供直接使用默认值，无需询问**：
+   - 单箱重量 → 默认 0 kg（不影响装箱计算）
+   - 最大堆高 → 默认 1800mm
+   - 旋转模式 → 默认 "all"（允许任意旋转）
+   - 算法 → 托盘默认 layer-building，集装箱默认 wall-building，其他默认 extreme-point
+   - 支撑检查 → 默认开启
+4. **用户已提供 尺寸+数量+容器类型 就立即输出 JSON，不要继续追问。**
+5. 示例：
+   用户："60×30×20纸箱30个码到国标托盘，每个30kg，横纵交替"
+   → 信息齐全，直接输出 JSON，weight=30, algorithm=layer-building, features.supportCheck=true
 
 ## 装箱参数解析规则
 
@@ -115,21 +113,28 @@ class PackAgent:
             "get_container_standards": get_container_standards,
         }
 
-    async def chat(self, message: str) -> AsyncGenerator[dict, None]:
+    async def chat(self, message: str, history: list[dict] | None = None) -> AsyncGenerator[dict, None]:
         """
         处理用户消息，流式返回结果。
+
+        Args:
+            message: 当前用户消息
+            history: 历史消息 [{"role":"user"|"assistant","content":"..."}]
 
         Yields: {type: "text"|"config"|"done"|"error", content: ...}
         """
         try:
             full_response = ""
 
+            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+            if history:
+                # 只保留最近 10 轮对话，避免 token 超限
+                messages.extend(history[-20:])
+            messages.append({"role": "user", "content": message})
+
             stream = await self._client.chat.completions.create(
                 model=self._model,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": message},
-                ],
+                messages=messages,
                 stream=True,
                 temperature=0.3,
                 max_tokens=2000,

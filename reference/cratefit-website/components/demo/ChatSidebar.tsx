@@ -52,10 +52,16 @@ export function ChatSidebar({ collapsed, onToggle }: ChatSidebarProps) {
     let aiText = '';
 
     try {
+      // Build conversation history from messages
+      const history = messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.text,
+      }));
+
       const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history }),
         signal: controller.signal,
       });
 
