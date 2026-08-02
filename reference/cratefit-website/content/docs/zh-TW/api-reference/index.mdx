@@ -1,0 +1,38 @@
+---
+title: API 參考
+description: CrateFit 完整 API 文件。
+order: 10
+---
+
+## 核心函數
+
+### pack()
+
+解決裝箱問題的主要函數。
+
+```typescript
+function pack(config: PackConfig): PackResult
+```
+
+**參數：**
+
+| 名稱 | 型別 | 說明 |
+|------|------|------|
+| `config.bins` | `BinSpec[]` | 可用的容器 |
+| `config.items` | `ItemSpec[]` | 要裝入的物品 |
+| `config.options` | `PackOptions` | 裝箱選項（選用） |
+
+**回傳值：** `PackResult`，包含已裝箱的容器、未裝入的物品和統計數據。
+
+### 場景專用函數
+
+- `packPallet()` - 針對棧板裝載優化
+- `packContainer()` - 針對貨櫃裝載優化
+- `packTruck()` - 針對卡車裝載優化（含軸重計算）
+
+## 型別
+
+詳細的型別文件請參閱以下頁面：
+
+- [型別](/docs/api-reference/types) - 核心型別定義
+- [演算法](/docs/api-reference/algorithms) - 可用的演算法

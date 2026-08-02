@@ -1,0 +1,120 @@
+---
+title: Quick Start
+description: Build your first bin packing solution with CrateFit.
+order: 3
+---
+
+## Basic Packing
+
+The simplest way to use CrateFit is with the `pack()` function:
+
+```typescript
+import { pack } from '@cratefit/pack';
+
+// Define your containers (bins)
+const bins = [
+  {
+    id: 'container-1',
+    type: 'box',
+    width: 100,
+    height: 100,
+    depth: 100
+  }
+];
+
+// Define items to pack
+const items = [
+  { id: 'item-1', width: 50, height: 30, depth: 40, quantity: 2 },
+  { id: 'item-2', width: 60, height: 40, depth: 30 },
+  { id: 'item-3', width: 20, height: 20, depth: 20, quantity: 5 }
+];
+
+// Pack items into bins
+const result = pack({ bins, items });
+
+// Check results
+console.log(`Bins used: ${result.stats.binsUsed}`);
+console.log(`Items packed: ${result.stats.packedItems}`);
+console.log(`Utilization: ${(result.stats.avgUtilization * 100).toFixed(1)}%`);
+```
+
+## Understanding Results
+
+The `pack()` function returns a `PackResult` object:
+
+```typescript
+interface PackResult {
+  packed: PackedBin[];      // Successfully packed bins
+  unpacked: ItemSpec[];     // Items that couldn't fit
+  stats: PackStats;         // Summary statistics
+}
+```
+
+Each `PackedBin` contains:
+
+```typescript
+interface PackedBin {
+  bin: BinSpec;             // The container used
+  items: PlacedItem[];      // Items with positions
+  utilization: number;      // Volume utilization (0-1)
+  weight: number;           // Total weight
+}
+```
+
+## Choosing Algorithms
+
+CrateFit includes multiple algorithms optimized for different scenarios:
+
+```typescript
+const result = pack({
+  bins,
+  items,
+  options: {
+    algorithm: 'extreme-point'  // Default, good general performance
+    // algorithm: 'layer-building'  // Better for uniform items
+    // algorithm: 'eb-afit'  // Best for mixed item sizes
+  }
+});
+```
+
+## Adding Constraints
+
+Real-world packing often requires constraints:
+
+```typescript
+const items = [
+  {
+    id: 'heavy-item',
+    width: 50,
+    height: 50,
+    depth: 50,
+    weight: 100,
+    maxStackWeight: 50,      // Max weight that can be stacked on top
+    requiresFloor: true      // Must be placed on floor
+  },
+  {
+    id: 'fragile-item',
+    width: 30,
+    height: 30,
+    depth: 30,
+    rotationType: 'fixed'    // No rotation allowed
+  }
+];
+
+const bins = [
+  {
+    id: 'container',
+    type: 'box',
+    width: 200,
+    height: 200,
+    depth: 200,
+    maxWeight: 500           // Container weight limit
+  }
+];
+```
+
+## Next Steps
+
+- Learn about [API Reference](/docs/api-reference) for full documentation
+- Explore [Examples](/docs/examples) for real-world use cases
+- Try the [Interactive Demo](/demo) to visualize packing

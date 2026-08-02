@@ -1,0 +1,55 @@
+---
+title: Installation
+description: How to install CrateFit in your project.
+order: 2
+---
+
+## Package Manager
+
+Install CrateFit using your preferred package manager:
+
+```bash
+# npm
+npm install @cratefit/pack
+
+# pnpm
+pnpm add @cratefit/pack
+
+# yarn
+yarn add @cratefit/pack
+```
+
+## Optional: Visualization
+
+For 3D visualization support, also install the viz package:
+
+```bash
+npm install @cratefit/viz three
+```
+
+The visualization package requires Three.js as a peer dependency.
+
+## Requirements
+
+- Node.js 18.0.0 or higher
+- TypeScript 5.0+ (recommended for full type support)
+
+## Verify Installation
+
+Create a simple test to verify the installation:
+
+```typescript
+import { pack } from '@cratefit/pack';
+
+const result = pack({
+  bins: [{ id: 'test', type: 'box', width: 10, height: 10, depth: 10 }],
+  items: [{ id: 'item', width: 5, height: 5, depth: 5 }]
+});
+
+console.log('CrateFit installed successfully!');
+console.log(`Packed: ${result.stats.packedItems} items`);
+```
+
+## Next Steps
+
+Continue to the [Quick Start](/docs/quick-start) guide to learn the basics.

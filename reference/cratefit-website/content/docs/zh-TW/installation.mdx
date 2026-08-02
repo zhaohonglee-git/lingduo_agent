@@ -1,0 +1,55 @@
+---
+title: 安裝
+description: 如何在你的專案中安裝 CrateFit。
+order: 2
+---
+
+## 套件管理器
+
+使用你偏好的套件管理器安裝 CrateFit：
+
+```bash
+# npm
+npm install @cratefit/pack
+
+# pnpm
+pnpm add @cratefit/pack
+
+# yarn
+yarn add @cratefit/pack
+```
+
+## 選用：視覺化
+
+如需 3D 視覺化支援，請額外安裝 viz 套件：
+
+```bash
+npm install @cratefit/viz three
+```
+
+視覺化套件需要 Three.js 作為 peer dependency。
+
+## 系統需求
+
+- Node.js 18.0.0 或更高版本
+- TypeScript 5.0+（建議，以獲得完整型別支援）
+
+## 驗證安裝
+
+建立一個簡單的測試來驗證安裝：
+
+```typescript
+import { pack } from '@cratefit/pack';
+
+const result = pack({
+  bins: [{ id: 'test', type: 'box', width: 10, height: 10, depth: 10 }],
+  items: [{ id: 'item', width: 5, height: 5, depth: 5 }]
+});
+
+console.log('CrateFit 安裝成功！');
+console.log(`已裝入：${result.stats.packedItems} 個物品`);
+```
+
+## 下一步
+
+繼續閱讀[快速開始](/docs/quick-start)指南，學習基礎操作。

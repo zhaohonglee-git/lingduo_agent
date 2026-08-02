@@ -1,0 +1,441 @@
+{
+  "metadata": {
+    "title": "CrateFit - 簡單易用的 3D 裝箱優化",
+    "description": "開源 3D 裝箱演算法庫，用於貨櫃裝載、棧板堆疊和物流優化。"
+  },
+  "nav": {
+    "docs": "文件",
+    "demo": "展示",
+    "pricing": "價格",
+    "getStarted": "開始使用"
+  },
+  "hero": {
+    "badge": "v0.1.1 已發布，支援即時裝箱",
+    "title": "3D 裝箱優化",
+    "titleHighlight": "簡單易用",
+    "description": "開源 TypeScript 函式庫，用於貨櫃裝載、棧板堆疊和物流優化。提供多種演算法、即時 3D 視覺化和完整的約束條件支援。",
+    "tryDemo": "體驗展示",
+    "readDocs": "閱讀文件",
+    "install": "npm install @cratefit/pack"
+  },
+  "features": {
+    "title": "裝箱優化所需的一切",
+    "description": "全面的 3D 裝箱解決方案，提供靈活的演算法和廣泛的約束條件支援。",
+    "multipleAlgorithms": {
+      "title": "多種演算法",
+      "description": "Extreme Point、Layer Building 和 EB-AFIT 演算法，針對不同場景優化。"
+    },
+    "visualization": {
+      "title": "3D 視覺化",
+      "description": "內建 Canvas 2D 和 Three.js 3D 渲染，支援即時視覺化。"
+    },
+    "typescript": {
+      "title": "原生 TypeScript",
+      "description": "使用 TypeScript 編寫，提供完整的型別定義，零執行時依賴。"
+    },
+    "weight": {
+      "title": "重量約束",
+      "description": "支援物品重量、容器最大重量和重量分配。"
+    },
+    "rotation": {
+      "title": "旋轉控制",
+      "description": "可為每個物品配置允許的旋轉方向，支援方向約束。"
+    },
+    "stacking": {
+      "title": "堆疊規則",
+      "description": "定義堆疊限制和易碎品約束，確保安全堆疊。"
+    },
+    "online": {
+      "title": "即時裝箱",
+      "description": "物品到達時即時增量裝箱，適合輸送帶系統。"
+    },
+    "performance": {
+      "title": "高效能",
+      "description": "優化的演算法，可高效處理數千個物品。"
+    }
+  },
+  "useCases": {
+    "title": "為真實物流場景打造",
+    "description": "從電商出貨到國際運輸，CrateFit 可處理各種裝箱場景。",
+    "ecommerce": {
+      "title": "電商出貨",
+      "description": "優化網路訂單的箱子選擇和裝箱方式，透過最小化包裝尺寸來降低運費。",
+      "example": "為多品項訂單選擇最佳箱子尺寸"
+    },
+    "container": {
+      "title": "貨櫃裝載",
+      "description": "最大化國際運輸的貨櫃利用率，處理混合貨物的重量和堆疊約束。",
+      "example": "裝載混合 SKU 的 40 呎貨櫃"
+    },
+    "pallet": {
+      "title": "棧板堆疊",
+      "description": "在重量限制和堆疊規則下建立穩定的棧板，優化倉儲效率。",
+      "example": "依穩定性規則在棧板上堆疊箱子"
+    },
+    "truck": {
+      "title": "卡車裝載",
+      "description": "依配送順序規劃高效的卡車裝載，支援多個配送點。",
+      "example": "依路線優化裝載配送卡車"
+    }
+  },
+  "codeExample": {
+    "title": "簡單 API，強大功能",
+    "description": "只需幾行程式碼即可開始使用，提供完整的 TypeScript 支援和全面的型別定義。"
+  },
+  "cta": {
+    "title": "準備好優化您的裝箱了嗎？",
+    "description": "立即開始使用 CrateFit。個人和商業使用完全免費，無需註冊帳號。",
+    "getStarted": "開始使用",
+    "tryDemo": "體驗展示"
+  },
+  "footer": {
+    "description": "3D 裝箱函式庫，用於物流優化。",
+    "product": "產品",
+    "resources": "資源",
+    "community": "社群",
+    "apiReference": "API 參考"
+  },
+  "pricing": {
+    "title": "完全免費",
+    "description": "CrateFit 完全免費。使用 SDK、Public API 或自行架設。",
+    "quickStart": "快速開始",
+    "sdk": {
+      "name": "SDK",
+      "price": "免費",
+      "description": "在您的應用程式中直接使用函式庫",
+      "cta": "開始使用",
+      "features": {
+        "fullFunctionality": "完整 @cratefit/pack 功能",
+        "visualization": "@cratefit/viz 3D 視覺化",
+        "allAlgorithms": "包含所有演算法",
+        "typescript": "TypeScript 支援",
+        "commercialUse": "允許商業使用",
+        "communitySupport": "社群支援"
+      }
+    },
+    "api": {
+      "name": "Public API",
+      "price": "免費",
+      "description": "用於評估和原型開發",
+      "cta": "試用 API",
+      "notice": "僅供測試和展示用途。端點可能會在不另行通知的情況下變更。生產環境建議自行架設。",
+      "features": {
+        "restApi": "REST API 存取",
+        "noSetup": "無需伺服器設置",
+        "rateLimit": "每分鐘 60 次請求限制",
+        "allAlgorithms": "所有演算法可用",
+        "jsonResponse": "JSON 回應格式",
+        "noRegistration": "無需註冊"
+      }
+    },
+    "selfHosted": {
+      "name": "自行架設",
+      "price": "免費",
+      "description": "運行自己的實例，無任何限制",
+      "cta": "在 GitHub 上查看",
+      "features": {
+        "noRateLimits": "無速率限制",
+        "fullControl": "完全控制部署",
+        "privateNetwork": "私有網路使用",
+        "customConfig": "自訂配置",
+        "dockerSupport": "Docker 支援",
+        "sameLicense": "相同授權條款"
+      }
+    },
+    "faq": {
+      "title": "常見問題",
+      "whyFree": {
+        "q": "為什麼一切都是免費的？",
+        "a": "我們相信裝箱工具應該讓每個人都能使用。CrateFit 對個人和商業使用完全免費。"
+      },
+      "rateLimits": {
+        "q": "API 的速率限制是什麼？",
+        "a": "Public API 每個 IP 每分鐘允許 60 次請求。這對大多數使用場景來說已經足夠。如需更高吞吐量，請自行架設。"
+      },
+      "selfHost": {
+        "q": "我可以自行架設 API 嗎？",
+        "a": "當然可以。查看我們的部署指南，即可無限制地運行您自己的 CrateFit API 伺服器。"
+      },
+      "commercial": {
+        "q": "我可以將 CrateFit 用於商業用途嗎？",
+        "a": "可以。允許商業使用，無需取得額外授權。您可以在商業產品和服務中自由使用 SDK 和 API。"
+      },
+      "support": {
+        "q": "有商業支援嗎？",
+        "a": "如需商業支援、客製化開發或企業諮詢，請透過 GitHub Issues 或電子郵件聯繫我們。"
+      }
+    }
+  },
+  "demo": {
+    "tabs": {
+      "bins": "容器",
+      "items": "物品",
+      "online": "即時",
+      "options": "選項"
+    },
+    "containers": "容器",
+    "container": "容器",
+    "containerType": "容器類型",
+    "containerTypes": {
+      "box": "箱子",
+      "pallet": "棧板",
+      "container": "貨櫃",
+      "truck": "卡車",
+      "shelf": "貨架",
+      "custom": "自訂"
+    },
+    "presetSizes": "預設尺寸",
+    "selectPreset": "選擇預設",
+    "maxWeight": "最大重量",
+    "cost": "成本",
+    "advancedOptions": "進階選項",
+    "bins": {
+      "excludeZones": "排除區域",
+      "irregularPresets": "異形容器"
+    },
+    "algorithm": "演算法",
+    "strategy": "策略",
+    "algorithms": {
+      "extremePoint": {
+        "name": "Extreme Point",
+        "description": "快速貪婪演算法，速度與品質的良好平衡。"
+      },
+      "layerBuilding": {
+        "name": "Layer Building",
+        "description": "建立水平層，最適合棧板裝載。"
+      },
+      "wallBuilding": {
+        "name": "Wall Building",
+        "description": "建立垂直牆，適合 LIFO 貨櫃裝載。"
+      },
+      "ebAfit": {
+        "name": "EB-AFIT",
+        "description": "增強自適應演算法，空間利用率更高。"
+      }
+    },
+    "binSelection": "容器選擇",
+    "binSelections": {
+      "firstFit": "首次適配",
+      "bestFit": "最佳適配",
+      "spread": "分散 (平衡負載)"
+    },
+    "preprocessor": "前處理器",
+    "preprocessors": {
+      "none": "無",
+      "blockBuilding": "區塊建構"
+    },
+    "enhancer": "增強器",
+    "enhancers": {
+      "none": "無",
+      "genetic": "基因演算法"
+    },
+    "features": "功能",
+    "supportCheck": "支撐檢查 (重力)",
+    "weightBalance": "重量平衡",
+    "stackingLimit": "堆疊限制",
+    "constraints": "約束",
+    "respectDeliveryOrder": "遵守配送順序 (LIFO)",
+    "keepGroupsTogether": "保持群組在一起",
+    "enforceIncompatibility": "強制群組不相容",
+    "performance": "效能",
+    "timeBudget": "時間預算 (毫秒)",
+    "timeBudgetHint": "0 = 無限制，適用於基因演算法。",
+    "showDetails": "顯示詳情",
+    "hideDetails": "隱藏詳情",
+    "items": "物品",
+    "types": "種類",
+    "total": "總計",
+    "add": "新增",
+    "noItems": "尚未新增物品",
+    "qty": "數量",
+    "weight": "重量",
+    "rotationType": "旋轉",
+    "rotationTypes": {
+      "all": "全部",
+      "horizontal": "僅水平",
+      "fixed": "固定"
+    },
+    "maxStackWeight": "最大堆疊重量",
+    "deliveryOrder": "配送順序",
+    "groupId": "群組 ID",
+    "groupIdPlaceholder": "例如：易碎、食品",
+    "requiresFloor": "必須放在地面",
+    "onlinePacking": {
+      "title": "即時裝箱",
+      "description": "逐一放置物品，即時裝箱。在不知道後續物品的情況下立即放置。",
+      "noBins": "請先新增至少一個容器。",
+      "start": "開始即時裝箱",
+      "stop": "停止",
+      "nextItem": "下一個物品",
+      "placeItem": "放置物品",
+      "history": "歷史紀錄",
+      "noHistory": "尚未放置任何物品"
+    },
+    "pack": "裝箱",
+    "packing": "裝箱中...",
+    "autoPack": "自動裝箱",
+    "reset": "重設",
+    "results": "結果",
+    "packed": "已裝箱",
+    "unpacked": "未裝箱",
+    "rejected": "已拒絕",
+    "utilization": "利用率",
+    "binsUsed": "使用容器數",
+    "clickToPack": "點擊「裝箱」查看結果",
+    "selectExample": "選擇範例...",
+    "browseAllExamples": "瀏覽所有範例",
+    "examples": {
+      "categories": {
+        "quickStart": "快速開始",
+        "basicPacking": "基本裝箱",
+        "constraints": "約束條件",
+        "realScenarios": "實際場景"
+      },
+      "quickStart": {
+        "name": "快速入門",
+        "description": "簡單的入門範例，在單一箱子中放入多個物品。"
+      },
+      "basicCubes": {
+        "name": "基本立方體",
+        "description": "三種不同尺寸的簡單立方體裝箱。"
+      },
+      "multiBin": {
+        "name": "多容器選擇",
+        "description": "為電子產品選擇最佳箱子，優化成本。"
+      },
+      "mixedSizes": {
+        "name": "混合尺寸",
+        "description": "大、中、小物品搭配支撐檢查。"
+      },
+      "weightConstraints": {
+        "name": "重量約束",
+        "description": "三個重物超過箱子重量限制。"
+      },
+      "fragileItems": {
+        "name": "易碎物品",
+        "description": "設有最大堆疊重量限制的易碎品。"
+      },
+      "rotationConstraints": {
+        "name": "旋轉約束",
+        "description": "不同旋轉類型的物品：全向、水平、固定。"
+      },
+      "groupConstraints": {
+        "name": "群組約束",
+        "description": "食品與化學品必須分開放置於不同容器。"
+      },
+      "supportRequirements": {
+        "name": "支撐要求",
+        "description": "需要放置於地面或最低支撐百分比的物品。"
+      },
+      "palletLoading": {
+        "name": "棧板裝載",
+        "description": "使用層建構演算法在 EUR1 棧板上堆疊箱子。"
+      },
+      "container40ft": {
+        "name": "40 呎貨櫃 (LIFO)",
+        "description": "使用牆建構演算法按配送順序裝載貨櫃。"
+      },
+      "ebAfit": {
+        "name": "EB-AFIT 演算法",
+        "description": "增強自適應演算法，含時間預算優化。"
+      },
+      "homogeneousItems": {
+        "name": "同質物品",
+        "description": "使用層建構演算法最佳排列相同箱子。"
+      }
+    },
+    "welcome": {
+      "title": "歡迎使用 CrateFit 展示",
+      "subtitle": "互動式探索 3D 裝箱演算法",
+      "tips": {
+        "title": "快速提示",
+        "autopack": "預設啟用自動裝箱，變更會立即套用。",
+        "viewer": "使用滑鼠旋轉，滾輪縮放，右鍵平移 3D 視圖。",
+        "export": "可將配置匯出為 JSON 或透過 URL 分享。"
+      },
+      "selectExample": "選擇範例開始體驗",
+      "dontShowAgain": "不再顯示",
+      "startExploring": "開始探索"
+    },
+    "comparison": {
+      "title": "演算法比較",
+      "runAll": "執行所有演算法",
+      "running": "執行中...",
+      "notRun": "點擊執行以比較",
+      "randomBaseline": "隨機基準",
+      "vsBaseline": "vs 基準"
+    },
+    "instructions": {
+      "title": "裝箱指示",
+      "preview": "預覽",
+      "summary": "摘要",
+      "dimensions": "尺寸",
+      "items": "物品",
+      "layers": "層數",
+      "layer": "層",
+      "step": "步驟",
+      "groupByLayer": "依層分組",
+      "includePositions": "包含位置",
+      "includeNotes": "包含備註",
+      "copy": "複製",
+      "download": "下載",
+      "actions": {
+        "place": "放置",
+        "stack": "堆疊於",
+        "rotate": "旋轉放置"
+      },
+      "orientations": {
+        "upright": "直立",
+        "flat": "平放",
+        "sideways": "側放"
+      }
+    },
+    "viewer": {
+      "edges": "邊框",
+      "grid": "格線",
+      "cog": "重心",
+      "explode": "爆炸視圖",
+      "autoRotate": "自動旋轉",
+      "explodeDistance": "分散距離",
+      "layers": "層篩選",
+      "showAll": "顯示所有層",
+      "filterLayers": "篩選層",
+      "screenshot": "截圖",
+      "screenshotCopied": "已複製到剪貼簿",
+      "screenshotDownloaded": "已下載",
+      "resetView": "重設視角",
+      "opacity": "透明度"
+    },
+    "hoverInfo": {
+      "dimensions": "尺寸",
+      "position": "位置"
+    },
+    "utility": {
+      "export": "匯出",
+      "import": "匯入",
+      "share": "分享",
+      "reset": "重設",
+      "copied": "已複製！",
+      "copyShareUrl": "複製分享連結：",
+      "resetTitle": "重設配置",
+      "confirmReset": "確定要重設所有配置為預設值嗎？此操作無法復原。",
+      "cancel": "取消"
+    }
+  },
+  "theme": {
+    "light": "淺色",
+    "dark": "深色",
+    "system": "系統",
+    "switchTo": "切換至{mode}"
+  },
+  "language": {
+    "en": "English",
+    "zh-TW": "繁體中文",
+    "switchLanguage": "切換語言"
+  },
+  "notFound": {
+    "title": "404",
+    "description": "找不到頁面",
+    "backHome": "返回首頁"
+  }
+}

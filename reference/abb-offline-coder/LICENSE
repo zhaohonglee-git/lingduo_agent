@@ -1,0 +1,43 @@
+MIT License
+
+Copyright (c) 2026 Hollis36
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Trademark Notice
+
+"ABB" and related product names (IRB 52, IRB 5400, IRB 5500, IRB 5710,
+RobotStudio, RobotWare, RAPID, OmniCore, IRC5, FlexPainter, RobView, etc.)
+are trademarks or registered trademarks of ABB Ltd. or its affiliates.
+
+This project is **NOT** affiliated with, endorsed by, sponsored by, or
+otherwise officially connected with ABB Ltd. or any of its subsidiaries.
+
+The author is not an employee, contractor, or representative of ABB.
+
+This software is an independent, third-party tool created by community
+contributors to assist with RAPID programming workflows. All ABB-related
+content (including documentation references, instruction names, and data
+type names) is used solely for descriptive and interoperability purposes
+under fair-use principles.
+
+For official ABB software and documentation, please visit
+https://new.abb.com/products/robotics

@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this project in your research or engineering workflow, please cite it using the metadata below."
+title: "abb-offline-coder: Offline AI-Assisted RAPID Code Generation for ABB Industrial Robots"
+type: software
+authors:
+  - family-names: Zhang
+    given-names: Peifu
+    orcid: "https://orcid.org/0009-0007-8422-3955"
+repository-code: "https://github.com/Hollis36/abb-offline-coder"
+url: "https://github.com/Hollis36/abb-offline-coder"
+abstract: "An offline AI-assisted programming tool for generating ABB RAPID programs from natural-language task descriptions, with RAG-based retrieval, local LLM inference, controller-specific validation, and RobotStudio-oriented deployment support."
+keywords:
+  - industrial robotics
+  - ABB robot
+  - RAPID code generation
+  - offline programming
+  - smart manufacturing
+license: MIT
+version: "0.1.0"
+date-released: "2026-07-04"

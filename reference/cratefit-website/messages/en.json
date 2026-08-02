@@ -1,0 +1,441 @@
+{
+  "metadata": {
+    "title": "CrateFit - 3D Bin Packing Made Simple",
+    "description": "Open-source 3D bin packing library for container loading, pallet packing, and logistics optimization."
+  },
+  "nav": {
+    "docs": "Docs",
+    "demo": "Demo",
+    "pricing": "Pricing",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "v0.1.1 released with online packing support",
+    "title": "3D Bin Packing",
+    "titleHighlight": "Made Simple",
+    "description": "Open-source TypeScript library for container loading, pallet packing, and logistics optimization. Multiple algorithms, real-time visualization, and constraint support out of the box.",
+    "tryDemo": "Try Demo",
+    "readDocs": "Read Docs",
+    "install": "npm install @cratefit/pack"
+  },
+  "features": {
+    "title": "Everything you need for bin packing",
+    "description": "A comprehensive solution for 3D bin packing with flexible algorithms and extensive constraint support.",
+    "multipleAlgorithms": {
+      "title": "Multiple Algorithms",
+      "description": "Extreme Point, Layer Building, and EB-AFIT algorithms optimized for different use cases."
+    },
+    "visualization": {
+      "title": "3D Visualization",
+      "description": "Built-in Canvas 2D and Three.js 3D rendering for real-time packing visualization."
+    },
+    "typescript": {
+      "title": "TypeScript Native",
+      "description": "Written in TypeScript with full type definitions. Zero runtime dependencies."
+    },
+    "weight": {
+      "title": "Weight Constraints",
+      "description": "Support for item weights, max container weight, and weight distribution."
+    },
+    "rotation": {
+      "title": "Rotation Control",
+      "description": "Configure allowed rotations per item. Support for orientation constraints."
+    },
+    "stacking": {
+      "title": "Stacking Rules",
+      "description": "Define stacking limits and fragility constraints for safe packing."
+    },
+    "online": {
+      "title": "Online Packing",
+      "description": "Real-time incremental packing as items arrive. Perfect for conveyor systems."
+    },
+    "performance": {
+      "title": "High Performance",
+      "description": "Optimized algorithms capable of handling thousands of items efficiently."
+    }
+  },
+  "useCases": {
+    "title": "Built for real-world logistics",
+    "description": "From e-commerce fulfillment to international shipping, CrateFit handles diverse packing scenarios.",
+    "ecommerce": {
+      "title": "E-commerce Shipping",
+      "description": "Optimize box selection and packing for online orders. Reduce shipping costs by minimizing package sizes.",
+      "example": "Select optimal box size for multi-item orders"
+    },
+    "container": {
+      "title": "Container Loading",
+      "description": "Maximize container utilization for international shipping. Handle mixed cargo with weight and stacking constraints.",
+      "example": "Load 40ft containers with mixed SKUs"
+    },
+    "pallet": {
+      "title": "Pallet Packing",
+      "description": "Build stable pallets respecting weight limits and stacking rules. Optimize for warehouse efficiency.",
+      "example": "Stack boxes on pallets with stability rules"
+    },
+    "truck": {
+      "title": "Truck Loading",
+      "description": "Plan efficient truck loads with delivery sequence. Support for multiple drop points.",
+      "example": "Load delivery trucks with route optimization"
+    }
+  },
+  "codeExample": {
+    "title": "Simple API, powerful results",
+    "description": "Get started with just a few lines of code. Full TypeScript support with comprehensive type definitions."
+  },
+  "cta": {
+    "title": "Ready to optimize your packing?",
+    "description": "Start using CrateFit today. Completely free for personal and commercial use. No account required.",
+    "getStarted": "Get Started",
+    "tryDemo": "Try Demo"
+  },
+  "footer": {
+    "description": "3D bin packing library for logistics optimization.",
+    "product": "Product",
+    "resources": "Resources",
+    "community": "Community",
+    "apiReference": "API Reference"
+  },
+  "pricing": {
+    "title": "Completely Free",
+    "description": "CrateFit is completely free. Use the SDK, Public API, or self-host your own instance.",
+    "quickStart": "Quick Start",
+    "sdk": {
+      "name": "SDK",
+      "price": "Free",
+      "description": "Use the library directly in your application",
+      "cta": "Get Started",
+      "features": {
+        "fullFunctionality": "Full @cratefit/pack functionality",
+        "visualization": "3D visualization with @cratefit/viz",
+        "allAlgorithms": "All algorithms included",
+        "typescript": "TypeScript support",
+        "commercialUse": "Commercial use allowed",
+        "communitySupport": "Community support"
+      }
+    },
+    "api": {
+      "name": "Public API",
+      "price": "Free",
+      "description": "For evaluation and prototyping",
+      "cta": "Try API",
+      "notice": "Intended for testing and demonstration. Endpoints may change without notice. For production workloads, we recommend self-hosting.",
+      "features": {
+        "restApi": "REST API access",
+        "noSetup": "No server setup required",
+        "rateLimit": "60 requests/minute rate limit",
+        "allAlgorithms": "All algorithms available",
+        "jsonResponse": "JSON response format",
+        "noRegistration": "No registration needed"
+      }
+    },
+    "selfHosted": {
+      "name": "Self-Hosted",
+      "price": "Free",
+      "description": "Run your own instance with no restrictions",
+      "cta": "View on GitHub",
+      "features": {
+        "noRateLimits": "No rate limits",
+        "fullControl": "Full control over deployment",
+        "privateNetwork": "Private network usage",
+        "customConfig": "Custom configuration",
+        "dockerSupport": "Docker support",
+        "sameLicense": "Same license terms"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "whyFree": {
+        "q": "Why is everything free?",
+        "a": "We believe bin packing tools should be accessible to everyone. CrateFit is free for both personal and commercial use."
+      },
+      "rateLimits": {
+        "q": "What are the API rate limits?",
+        "a": "The Public API allows 60 requests per minute per IP address. This is sufficient for most use cases. For higher throughput, self-host your own instance."
+      },
+      "selfHost": {
+        "q": "Can I self-host the API?",
+        "a": "Absolutely. Check out our deployment guide to run your own CrateFit API server with no restrictions."
+      },
+      "commercial": {
+        "q": "Can I use CrateFit commercially?",
+        "a": "Yes. Commercial use is permitted without obtaining a separate license. You can freely use the SDK and API in commercial products and services."
+      },
+      "support": {
+        "q": "Is there commercial support?",
+        "a": "For commercial support, custom development, or enterprise consulting, please reach out via GitHub Issues or email."
+      }
+    }
+  },
+  "demo": {
+    "tabs": {
+      "bins": "Bins",
+      "items": "Items",
+      "online": "Online",
+      "options": "Options"
+    },
+    "containers": "Containers",
+    "container": "Container",
+    "containerType": "Container Type",
+    "containerTypes": {
+      "box": "Box",
+      "pallet": "Pallet",
+      "container": "Container",
+      "truck": "Truck",
+      "shelf": "Shelf",
+      "custom": "Custom"
+    },
+    "presetSizes": "Preset Sizes",
+    "selectPreset": "Select preset",
+    "maxWeight": "Max Weight",
+    "cost": "Cost",
+    "advancedOptions": "Advanced",
+    "bins": {
+      "excludeZones": "Exclude Zones",
+      "irregularPresets": "Irregular shapes"
+    },
+    "algorithm": "Algorithm",
+    "strategy": "Strategy",
+    "algorithms": {
+      "extremePoint": {
+        "name": "Extreme Point",
+        "description": "Fast greedy algorithm. Good balance of speed and quality."
+      },
+      "layerBuilding": {
+        "name": "Layer Building",
+        "description": "Builds horizontal layers. Best for pallet loading."
+      },
+      "wallBuilding": {
+        "name": "Wall Building",
+        "description": "Builds vertical walls. Ideal for LIFO container loading."
+      },
+      "ebAfit": {
+        "name": "EB-AFIT",
+        "description": "Enhanced adaptive fit. Better space utilization."
+      }
+    },
+    "binSelection": "Bin Selection",
+    "binSelections": {
+      "firstFit": "First Fit",
+      "bestFit": "Best Fit",
+      "spread": "Spread (Balance load)"
+    },
+    "preprocessor": "Preprocessor",
+    "preprocessors": {
+      "none": "None",
+      "blockBuilding": "Block Building"
+    },
+    "enhancer": "Enhancer",
+    "enhancers": {
+      "none": "None",
+      "genetic": "Genetic Algorithm"
+    },
+    "features": "Features",
+    "supportCheck": "Support Check (Gravity)",
+    "weightBalance": "Weight Balance",
+    "stackingLimit": "Stacking Limits",
+    "constraints": "Constraints",
+    "respectDeliveryOrder": "Respect Delivery Order (LIFO)",
+    "keepGroupsTogether": "Keep Groups Together",
+    "enforceIncompatibility": "Enforce Group Incompatibility",
+    "performance": "Performance",
+    "timeBudget": "Time Budget (ms)",
+    "timeBudgetHint": "0 = no limit. Useful for genetic algorithm.",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "items": "Items",
+    "types": "types",
+    "total": "total",
+    "add": "Add",
+    "noItems": "No items added",
+    "qty": "Qty",
+    "weight": "Weight",
+    "rotationType": "Rotation",
+    "rotationTypes": {
+      "all": "All",
+      "horizontal": "Horizontal Only",
+      "fixed": "Fixed"
+    },
+    "maxStackWeight": "Max Stack Weight",
+    "deliveryOrder": "Delivery Order",
+    "groupId": "Group ID",
+    "groupIdPlaceholder": "e.g., fragile, food",
+    "requiresFloor": "Must be on floor",
+    "onlinePacking": {
+      "title": "Online Packing",
+      "description": "Place items one at a time in real-time. Items are placed immediately without knowing future items.",
+      "noBins": "Please add at least one bin first.",
+      "start": "Start Online Packing",
+      "stop": "Stop",
+      "nextItem": "Next Item",
+      "placeItem": "Place Item",
+      "history": "History",
+      "noHistory": "No items placed yet"
+    },
+    "pack": "Pack",
+    "packing": "Packing...",
+    "autoPack": "Auto Pack",
+    "reset": "Reset",
+    "results": "Results",
+    "packed": "Packed",
+    "unpacked": "Unpacked",
+    "rejected": "Rejected",
+    "utilization": "Utilization",
+    "binsUsed": "Bins Used",
+    "clickToPack": "Click \"Pack\" to see results",
+    "selectExample": "Select example...",
+    "browseAllExamples": "Browse All Examples",
+    "examples": {
+      "categories": {
+        "quickStart": "Quick Start",
+        "basicPacking": "Basic Packing",
+        "constraints": "Constraints",
+        "realScenarios": "Real Scenarios"
+      },
+      "quickStart": {
+        "name": "Quick Start",
+        "description": "A simple example to get started. Multiple items in a single box."
+      },
+      "basicCubes": {
+        "name": "Basic Cubes",
+        "description": "Simple cube packing with three different item sizes."
+      },
+      "multiBin": {
+        "name": "Multi-Bin Selection",
+        "description": "Select optimal boxes for electronics with cost optimization."
+      },
+      "mixedSizes": {
+        "name": "Mixed Sizes",
+        "description": "Large, medium, and small items with support check enabled."
+      },
+      "weightConstraints": {
+        "name": "Weight Constraints",
+        "description": "Three heavy items exceeding the box weight limit."
+      },
+      "fragileItems": {
+        "name": "Fragile Items",
+        "description": "Items with max stack weight limits for fragile goods."
+      },
+      "rotationConstraints": {
+        "name": "Rotation Constraints",
+        "description": "Items with different rotation types: all, horizontal, fixed."
+      },
+      "groupConstraints": {
+        "name": "Group Constraints",
+        "description": "Food and chemicals that must be separated into different bins."
+      },
+      "supportRequirements": {
+        "name": "Support Requirements",
+        "description": "Items requiring floor placement or minimum support percentage."
+      },
+      "palletLoading": {
+        "name": "Pallet Loading",
+        "description": "Stack boxes on EUR1 pallet with layer building algorithm."
+      },
+      "container40ft": {
+        "name": "40ft Container (LIFO)",
+        "description": "Container loading with delivery order using wall building."
+      },
+      "ebAfit": {
+        "name": "EB-AFIT Algorithm",
+        "description": "Enhanced adaptive fit algorithm with time budget optimization."
+      },
+      "homogeneousItems": {
+        "name": "Homogeneous Items",
+        "description": "Identical boxes optimally arranged using layer building."
+      }
+    },
+    "welcome": {
+      "title": "Welcome to CrateFit Demo",
+      "subtitle": "Explore 3D bin packing algorithms interactively",
+      "tips": {
+        "title": "Quick Tips",
+        "autopack": "Auto-pack is enabled by default. Changes are applied instantly.",
+        "viewer": "Use mouse to rotate, scroll to zoom, right-click to pan the 3D view.",
+        "export": "Export your configuration as JSON or share via URL."
+      },
+      "selectExample": "Choose an example to get started",
+      "dontShowAgain": "Don't show this again",
+      "startExploring": "Start Exploring"
+    },
+    "comparison": {
+      "title": "Algorithm Comparison",
+      "runAll": "Run All Algorithms",
+      "running": "Running...",
+      "notRun": "Click Run to compare",
+      "randomBaseline": "Random baseline",
+      "vsBaseline": "vs baseline"
+    },
+    "instructions": {
+      "title": "Packing Instructions",
+      "preview": "Preview",
+      "summary": "Summary",
+      "dimensions": "Dimensions",
+      "items": "Items",
+      "layers": "Layers",
+      "layer": "Layer",
+      "step": "Step",
+      "groupByLayer": "Group by layer",
+      "includePositions": "Include positions",
+      "includeNotes": "Include notes",
+      "copy": "Copy",
+      "download": "Download",
+      "actions": {
+        "place": "Place",
+        "stack": "Stack on",
+        "rotate": "Rotate and place"
+      },
+      "orientations": {
+        "upright": "Upright",
+        "flat": "Flat",
+        "sideways": "Sideways"
+      }
+    },
+    "viewer": {
+      "edges": "Edges",
+      "grid": "Grid",
+      "cog": "Center of Gravity",
+      "explode": "Exploded View",
+      "autoRotate": "Auto Rotate",
+      "explodeDistance": "Explode Distance",
+      "layers": "Layer Filter",
+      "showAll": "Show All Layers",
+      "filterLayers": "Filter Layers",
+      "screenshot": "Screenshot",
+      "screenshotCopied": "Copied to clipboard",
+      "screenshotDownloaded": "Downloaded",
+      "resetView": "Reset View",
+      "opacity": "Opacity"
+    },
+    "hoverInfo": {
+      "dimensions": "Size",
+      "position": "Position"
+    },
+    "utility": {
+      "export": "Export",
+      "import": "Import",
+      "share": "Share",
+      "reset": "Reset",
+      "copied": "Copied!",
+      "copyShareUrl": "Copy the share URL:",
+      "resetTitle": "Reset Configuration",
+      "confirmReset": "Are you sure you want to reset all configuration to default? This action cannot be undone.",
+      "cancel": "Cancel"
+    }
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchTo": "Switch to {mode}"
+  },
+  "language": {
+    "en": "English",
+    "zh-TW": "繁體中文",
+    "switchLanguage": "Switch language"
+  },
+  "notFound": {
+    "title": "404",
+    "description": "Page not found",
+    "backHome": "Go back home"
+  }
+}

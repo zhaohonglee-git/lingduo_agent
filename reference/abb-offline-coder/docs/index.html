@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>abb-offline-coder · 离线 AI 编程助手 / ABB 喷涂机器人</title>
+<meta name="description" content="Offline AI assistant that generates ABB RAPID code from Chinese natural language. Runs fully offline on industrial PCs via local LLM (Ollama + Qwen2.5-Coder) and RAG over ABB official manuals." />
+<meta name="theme-color" content="#efeae3" />
+
+<!-- Favicon: 喷嘴 + 工业橙喷雾扇面 + 黑色被涂面 -->
+<!-- 16px 标签栏用简化版；32px+ 用带网格细节版 -->
+<link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
+<link rel="icon" type="image/svg+xml" sizes="16x16" href="favicon-16.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="mask-icon" href="favicon.svg" color="#d94a1f">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ------------- Design tokens ------------- */
+  :root {
+    --paper: #efeae3;
+    --paper-light: #f6f2eb;
+    --ink: #131313;
+    --ink-soft: #2a2625;
+    --steel: #5a5650;
+    --steel-light: #8c8780;
+    --blueprint: #c7c1b6;
+    --blueprint-soft: #d9d4c9;
+    --signal: #d94a1f;
+    --signal-dark: #a73813;
+    --signal-soft: rgba(217, 74, 31, 0.08);
+    --phosphor: #1a1815;
+    --phosphor-text: #e8e3d8;
+    --green-led: #4a8d3d;
+
+    --grid-size: 32px;
+    --grid-line: rgba(31, 28, 25, 0.04);
+
+    --font-display: "Fraunces", "Noto Serif SC", Georgia, serif;
+    --font-body: "IBM Plex Sans", "Noto Serif SC", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.55;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    background-position: -1px -1px;
+  }
+
+  ::selection { background: var(--signal); color: var(--paper); }
+
+  /* ------------- Top bar ------------- */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    background: rgba(239, 234, 227, 0.78);
+    border-bottom: 1px solid rgba(31, 28, 25, 0.08);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 18px; }
+  .topbar-id {
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .topbar-meta {
+    color: var(--steel);
+    font-weight: 400;
+  }
+  .topbar-meta::before {
+    content: "//";
+    margin-right: 8px;
+    color: var(--blueprint);
+  }
+  .topbar-right { display: flex; gap: 22px; align-items: center; }
+  .topbar-link {
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .topbar-link:hover { color: var(--signal); }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--green-led);
+    color: var(--green-led);
+    border-radius: 2px;
+    font-weight: 500;
+    font-size: 11px;
+  }
+  .status-pill .led {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green-led);
+    animation: blink 2s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(74, 141, 61, 0.55);
+  }
+  @keyframes blink {
+    0%, 60%, 100% { opacity: 1; }
+    70%, 90% { opacity: 0.35; }
+  }
+
+  /* ------------- CJK typography ------------- */
+  /* 中文标题：不在词中拆开 + 严格 CJK 标点规则 + 平衡换行 */
+  h2.section-title,
+  .hero-title,
+  .hero-blurb,
+  .feature h3,
+  .specimen-input-text,
+  .demo-prompt,
+  .sample-prompt,
+  .section-title em {
+    word-break: keep-all;
+    line-break: strict;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    hyphens: manual;
+  }
+  /* 不可拆词组 */
+  .nb { white-space: nowrap; }
+
+  /* ------------- Layout helpers ------------- */
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+  }
+  .section {
+    padding: 96px 0;
+    position: relative;
+  }
+  .section + .section {
+    border-top: 1px solid rgba(31, 28, 25, 0.06);
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--signal);
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .label::before {
+    content: "";
+    display: inline-block;
+    width: 18px; height: 1px;
+    background: var(--signal);
+  }
+  .label-num {
+    color: var(--steel);
+    font-weight: 400;
+  }
+
+  h2.section-title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 96, "SOFT" 30;
+    margin-bottom: 24px;
+    max-width: 880px;
+  }
+  h2.section-title em {
+    font-style: italic;
+    color: var(--signal);
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+  }
+
+  p.lead {
+    font-size: 1.125rem;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: 720px;
+    margin-bottom: 32px;
+  }
+
+  /* ------------- HERO ------------- */
+  .hero {
+    padding: 140px 0 90px;
+    position: relative;
+  }
+  .hero-decoration {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+  }
+  .hero-decoration.top-right {
+    top: 110px; right: 32px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel-light);
+    line-height: 1.6;
+    text-align: right;
+  }
+  .hero-decoration.top-right span { display: block; }
+  .hero-decoration.top-right .key { color: var(--blueprint); }
+
+  .hero-cluster {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--steel);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .hero-eyebrow span { color: var(--signal); }
+  .hero-eyebrow .divider {
+    width: 32px; height: 1px;
+    background: var(--blueprint);
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: clamp(3rem, 9vw, 7rem);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    font-variation-settings: "opsz" 144, "SOFT" 0;
+    margin-top: -8px;
+  }
+  .hero-title .stroke {
+    font-style: italic;
+    font-weight: 200;
+    color: var(--signal);
+    display: inline-block;
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+  }
+  .hero-title .punct {
+    color: var(--signal);
+    font-weight: 200;
+  }
+
+  .hero-blurb {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: clamp(1.3rem, 2.3vw, 1.65rem);
+    line-height: 1.4;
+    color: var(--ink-soft);
+    max-width: 720px;
+    margin-top: 4px;
+    font-variation-settings: "opsz" 36;
+  }
+  .hero-blurb b {
+    font-weight: 500;
+    color: var(--ink);
+    border-bottom: 1px solid var(--signal);
+    padding-bottom: 1px;
+  }
+
+  .hero-tags {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--steel);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-top: 4px;
+  }
+  .hero-tags li {
+    list-style: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .hero-tags li::before {
+    content: "▸";
+    color: var(--signal);
+    font-size: 10px;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .btn {
+    --btn-fg: var(--ink);
+    --btn-bg: transparent;
+    --btn-border: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    color: var(--btn-fg);
+    background: var(--btn-bg);
+    border: 1.5px solid var(--btn-border);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: 1px;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: var(--ink);
+    transition: left 0.25s ease;
+    z-index: 0;
+  }
+  .btn > * { position: relative; z-index: 1; }
+  .btn:hover::before { left: 0; }
+  .btn:hover {
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .btn .icon { font-size: 16px; line-height: 1; }
+  .btn .arrow {
+    transition: transform 0.18s ease;
+    font-size: 14px;
+  }
+  .btn:hover .arrow { transform: translate(3px, -2px); }
+
+  .btn-primary {
+    --btn-bg: var(--ink);
+    --btn-fg: var(--paper);
+    --btn-border: var(--ink);
+  }
+  .btn-primary::before { background: var(--signal); }
+  .btn-primary:hover {
+    color: var(--paper);
+    border-color: var(--signal);
+  }
+
+  .btn-accent {
+    --btn-bg: var(--signal);
+    --btn-fg: var(--paper);
+    --btn-border: var(--signal);
+  }
+  .btn-accent::before { background: var(--ink); }
+
+  /* ------------- Hero specimen ------------- */
+  .specimen {
+    margin-top: 56px;
+    border: 1px solid var(--ink);
+    background: var(--paper-light);
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    box-shadow: 8px 8px 0 var(--ink);
+    position: relative;
+  }
+  .specimen-label {
+    position: absolute;
+    top: -10px; left: 24px;
+    z-index: 5;                 /* 浮在深色 output 面板之上 */
+    background: var(--paper);
+    padding: 2px 12px;
+    border: 1px solid var(--ink); /* 像工程图上的贴纸 */
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--ink);
+    text-transform: uppercase;
+    line-height: 1.4;
+    white-space: nowrap;        /* 不让浏览器自动换行截断 */
+  }
+  .specimen-label::before {
+    content: "";
+    display: inline-block;
+    width: 5px; height: 5px;
+    background: var(--signal);
+    margin-right: 8px;
+    vertical-align: 1px;
+  }
+  .specimen-input {
+    padding: 24px 26px;
+    border-right: 1px solid var(--ink);
+    background: var(--paper-light);
+    position: relative;
+  }
+  .specimen-output {
+    padding: 0;
+    background: var(--phosphor);
+    color: var(--phosphor-text);
+    overflow: hidden;
+  }
+  .specimen-input-head {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--steel);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .specimen-input-head .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--signal);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .specimen-input-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    color: var(--ink);
+    font-variation-settings: "opsz" 24;
+  }
+  .specimen-meta {
+    margin-top: 22px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel);
+    line-height: 1.7;
+    border-top: 1px dashed var(--blueprint);
+    padding-top: 14px;
+  }
+  .specimen-meta dt { display: inline; color: var(--steel-light); }
+  .specimen-meta dd { display: inline; color: var(--ink); margin-right: 14px; }
+
+  .specimen-output-head {
+    padding: 12px 24px;
+    background: #0f0d0a;
+    color: var(--steel-light);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    display: flex;
+    justify-content: space-between;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 250, 240, 0.06);
+  }
+  .specimen-output-head .led-row { display: flex; gap: 6px; align-items: center; }
+  .specimen-output-head .led-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .specimen-output-head .led-dot.r { background: #d94a1f; }
+  .specimen-output-head .led-dot.y { background: #d9c11f; }
+  .specimen-output-head .led-dot.g { background: #4a8d3d; }
+
+  .specimen-output-code {
+    padding: 22px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .specimen-output-code .kw { color: #e8a55c; }
+  .specimen-output-code .ty { color: #74b8c4; }
+  .specimen-output-code .str { color: #b9d96c; }
+  .specimen-output-code .num { color: #d77c80; }
+  .specimen-output-code .cmt { color: #6e6a60; font-style: italic; }
+  .specimen-output-code .fn { color: #f0d96f; }
+
+  /* ------------- Section: Abstract ------------- */
+  .grid-two {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+  .abstract-side {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.85;
+    color: var(--steel);
+    border-left: 2px solid var(--signal);
+    padding-left: 22px;
+  }
+  .abstract-side dt {
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-top: 16px;
+  }
+  .abstract-side dt:first-child { margin-top: 0; }
+  .abstract-side dd {
+    margin-bottom: 4px;
+  }
+
+  /* ------------- Section: Demo ------------- */
+  .demo-board {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 28px;
+    align-items: stretch;
+  }
+  .demo-panel {
+    border: 1px solid var(--ink);
+    background: var(--paper-light);
+    display: flex;
+    flex-direction: column;
+  }
+  .demo-panel-head {
+    border-bottom: 1px solid var(--ink);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .demo-panel-head .step-id { color: var(--steel); }
+
+  .demo-input { padding: 24px 22px; }
+  .demo-input h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--steel);
+    margin-bottom: 10px;
+    font-variation-settings: "opsz" 14;
+  }
+  .demo-prompt {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    color: var(--ink);
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    background: var(--paper);
+    border-left: 3px solid var(--signal);
+    font-variation-settings: "opsz" 30;
+  }
+  .demo-step-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+    border-top: 1px dashed var(--blueprint);
+  }
+  .demo-step-list li {
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--blueprint);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: color 0.18s;
+  }
+  .demo-step-list li.done { color: var(--ink); }
+  .demo-step-list li.done .index {
+    background: var(--signal);
+    color: var(--paper);
+    border-color: var(--signal);
+  }
+  .demo-step-list .index {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border: 1.5px solid var(--blueprint);
+    color: var(--blueprint);
+    font-weight: 600;
+    text-align: center;
+    line-height: 19px;
+    font-size: 11px;
+    border-radius: 1px;
+  }
+  .demo-step-list .step-body { color: var(--ink-soft); }
+  .demo-step-list .step-detail {
+    display: block;
+    color: var(--steel-light);
+    margin-top: 2px;
+    font-size: 11px;
+  }
+
+  .demo-controls {
+    margin-top: auto;
+    border-top: 1px solid var(--ink);
+    padding: 14px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .demo-controls .ghost {
+    flex: 0;
+    background: transparent;
+    color: var(--steel);
+    border: 1px solid var(--blueprint);
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border-radius: 1px;
+  }
+  .demo-controls .ghost:hover { color: var(--ink); border-color: var(--ink); }
+  .demo-controls .run-btn {
+    flex: 1;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s;
+  }
+  .demo-controls .run-btn:hover { background: var(--signal); }
+
+  .demo-output {
+    background: var(--phosphor);
+    color: var(--phosphor-text);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--ink);
+  }
+  .demo-output-head {
+    padding: 12px 22px;
+    background: #0f0d0a;
+    color: var(--steel-light);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(255, 250, 240, 0.06);
+  }
+  .demo-output-head .file-name {
+    color: var(--phosphor-text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .demo-output-head .file-name::before {
+    content: "▸"; color: var(--signal);
+  }
+  .demo-output-code {
+    flex: 1;
+    padding: 24px 26px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.62;
+    overflow: auto;
+    white-space: pre;
+    max-height: 540px;
+  }
+  .demo-output-code .kw { color: #e8a55c; font-weight: 500; }
+  .demo-output-code .ty { color: #74b8c4; }
+  .demo-output-code .str { color: #b9d96c; }
+  .demo-output-code .num { color: #d77c80; }
+  .demo-output-code .cmt { color: #777267; font-style: italic; }
+  .demo-output-code .fn { color: #f0d96f; }
+
+  /* ------------- Interactive demo extras ------------- */
+  .demo-input-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .demo-input-head h4 { margin-bottom: 0; }
+  .controller-toggle {
+    display: inline-flex;
+    border: 1px solid var(--blueprint);
+    border-radius: 1px;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+  }
+  .controller-toggle button {
+    background: var(--paper);
+    color: var(--steel);
+    border: none;
+    padding: 5px 12px;
+    cursor: pointer;
+    font: inherit;
+    letter-spacing: inherit;
+    transition: background 0.15s, color 0.15s;
+  }
+  .controller-toggle button + button { border-left: 1px solid var(--blueprint); }
+  .controller-toggle button.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .demo-prompt-input {
+    display: block;
+    width: 100%;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.08rem;
+    line-height: 1.5;
+    color: var(--ink);
+    padding: 14px 16px;
+    background: var(--paper);
+    border: 1px solid var(--blueprint);
+    border-left: 3px solid var(--signal);
+    font-variation-settings: "opsz" 30;
+    resize: vertical;
+    min-height: 76px;
+    margin-bottom: 12px;
+    outline: none;
+    border-radius: 0;
+    transition: border-color 0.15s;
+  }
+  .demo-prompt-input:focus { border-color: var(--ink); border-left-color: var(--signal); }
+  .demo-prompt-input::placeholder { color: var(--steel-light); font-style: italic; }
+  .demo-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .demo-examples .ex-label {
+    color: var(--steel);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  .demo-examples .ex-chip {
+    background: transparent;
+    color: var(--steel);
+    border: 1px solid var(--blueprint);
+    padding: 4px 10px;
+    cursor: pointer;
+    font: inherit;
+    border-radius: 1px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .demo-examples .ex-chip:hover {
+    color: var(--signal);
+    border-color: var(--signal);
+    background: var(--signal-soft);
+  }
+  .demo-output-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-top: 1px solid rgba(255, 250, 240, 0.06);
+    background: #0f0d0a;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    flex-wrap: wrap;
+  }
+  .demo-output-actions .output-btn {
+    background: transparent;
+    color: var(--phosphor-text);
+    border: 1px solid rgba(232, 227, 216, 0.22);
+    padding: 5px 12px;
+    font: inherit;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .demo-output-actions .output-btn:hover:not(:disabled) {
+    color: var(--signal);
+    border-color: var(--signal);
+  }
+  .demo-output-actions .output-btn:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+  }
+  .demo-output-actions .output-note {
+    margin-left: auto;
+    color: var(--steel-light);
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    opacity: 0.85;
+  }
+  @media (max-width: 600px) {
+    .demo-output-actions .output-note {
+      width: 100%;
+      margin-left: 0;
+      margin-top: 4px;
+    }
+  }
+
+  /* ------------- Architecture ------------- */
+  .arch-wrap {
+    margin-top: 40px;
+    padding: 36px;
+    background: var(--paper-light);
+    border: 1px solid var(--ink);
+    position: relative;
+  }
+  .arch-wrap::before, .arch-wrap::after {
+    content: "";
+    position: absolute;
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--ink);
+    background: var(--signal);
+  }
+  .arch-wrap::before { top: -8px; left: -8px; }
+  .arch-wrap::after { bottom: -8px; right: -8px; }
+  .arch-pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ink);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .arch-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel);
+    margin-top: 24px;
+    letter-spacing: 0.04em;
+  }
+  .arch-caption .fig {
+    color: var(--signal);
+    font-weight: 600;
+  }
+
+  /* ------------- Features grid ------------- */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(31, 28, 25, 0.12);
+    margin-top: 40px;
+    border: 1px solid rgba(31, 28, 25, 0.12);
+  }
+  .feature {
+    padding: 32px 28px;
+    background: var(--paper);
+    position: relative;
+    transition: background 0.2s;
+  }
+  .feature:hover { background: var(--paper-light); }
+  .feature-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--signal);
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+  }
+  .feature h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.4rem;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    font-variation-settings: "opsz" 24, "SOFT" 50;
+  }
+  .feature h3 em {
+    font-style: italic;
+    color: var(--signal);
+    font-weight: 400;
+  }
+  .feature p {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .feature::after {
+    content: "";
+    position: absolute;
+    top: 24px; right: 24px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--signal);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .feature:hover::after { opacity: 1; }
+
+  /* ------------- Spec sheet ------------- */
+  .spec {
+    background: var(--paper-light);
+    border: 1px solid var(--ink);
+    margin-top: 36px;
+    overflow: hidden;
+  }
+  .spec-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 16px 28px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .spec-head .right { text-align: right; color: var(--steel-light); }
+  .spec-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 14px 28px;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    border-bottom: 1px dashed rgba(31, 28, 25, 0.12);
+    font-size: 13px;
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-row .key {
+    color: var(--steel);
+    letter-spacing: 0.02em;
+  }
+  .spec-row .key::after {
+    content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
+    color: var(--blueprint);
+    margin-left: 8px;
+    font-size: 11px;
+  }
+  .spec-row .val {
+    color: var(--ink);
+    font-weight: 500;
+    text-align: right;
+  }
+  .spec-row .val .unit {
+    color: var(--steel);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .spec-row .val .check { color: var(--green-led); margin-right: 6px; }
+
+  /* ------------- Samples gallery ------------- */
+  .samples-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .sample {
+    border: 1px solid var(--ink);
+    background: var(--phosphor);
+    color: var(--phosphor-text);
+    display: flex; flex-direction: column;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .sample:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .sample-head {
+    background: #0f0d0a;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 250, 240, 0.06);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--steel-light);
+    display: flex; justify-content: space-between;
+  }
+  .sample-head .id { color: var(--signal); font-weight: 600; }
+  .sample-head .tag { color: var(--phosphor-text); }
+  .sample-prompt {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 250, 240, 0.05);
+    background: #211e1a;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--phosphor-text);
+    font-variation-settings: "opsz" 18;
+  }
+  .sample-prompt::before {
+    content: "需求 →";
+    display: block;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--signal);
+    margin-bottom: 6px;
+  }
+  .sample-code {
+    padding: 16px 18px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.55;
+    overflow: auto;
+    max-height: 220px;
+    flex: 1;
+    white-space: pre;
+  }
+  .sample-code .kw { color: #e8a55c; }
+  .sample-code .ty { color: #74b8c4; }
+  .sample-code .str { color: #b9d96c; }
+  .sample-code .num { color: #d77c80; }
+  .sample-code .cmt { color: #6e6a60; font-style: italic; }
+  .sample-code .fn { color: #f0d96f; }
+  .sample-foot {
+    padding: 10px 18px;
+    border-top: 1px solid rgba(255, 250, 240, 0.05);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--steel-light);
+    display: flex; justify-content: space-between;
+    letter-spacing: 0.05em;
+  }
+  .sample-foot .ok::before {
+    content: "✓ ";
+    color: var(--green-led);
+  }
+
+  /* ------------- Quickstart ------------- */
+  .quick-board {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .quick-card {
+    background: var(--phosphor);
+    color: var(--phosphor-text);
+    border: 1px solid var(--ink);
+    overflow: hidden;
+  }
+  .quick-card-head {
+    padding: 14px 20px;
+    background: #0f0d0a;
+    border-bottom: 1px solid rgba(255, 250, 240, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .quick-card-head .plat {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--phosphor-text);
+  }
+  .quick-card-head .ver {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--steel-light);
+  }
+  .quick-card pre {
+    padding: 22px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--phosphor-text);
+    white-space: pre;
+    overflow: auto;
+  }
+  .quick-card .prompt { color: var(--signal); }
+  .quick-card .comment { color: #777267; font-style: italic; }
+
+  /* ------------- Citation ------------- */
+  .citation {
+    background: var(--phosphor);
+    color: var(--phosphor-text);
+    padding: 24px 28px;
+    border: 1px solid var(--ink);
+    margin-top: 36px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre;
+    overflow: auto;
+    position: relative;
+  }
+  .citation .key { color: #74b8c4; }
+  .citation .val { color: #b9d96c; }
+  .citation-copy {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: rgba(255, 250, 240, 0.04);
+    border: 1px solid rgba(255, 250, 240, 0.12);
+    color: var(--phosphor-text);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 5px 10px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.18s;
+  }
+  .citation-copy:hover {
+    background: var(--signal);
+    color: var(--paper);
+    border-color: var(--signal);
+  }
+
+  /* ------------- Footer ------------- */
+  footer {
+    border-top: 1px solid rgba(31, 28, 25, 0.1);
+    padding: 60px 0 80px;
+    margin-top: 64px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel);
+    line-height: 1.7;
+  }
+  footer .container {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 36px;
+  }
+  footer h5 {
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 14px;
+    font-variation-settings: "opsz" 18;
+  }
+  footer a {
+    color: var(--steel);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--blueprint);
+    transition: color 0.18s;
+  }
+  footer a:hover { color: var(--signal); border-color: var(--signal); }
+  footer .disclaimer {
+    color: var(--steel-light);
+    font-size: 10px;
+    border-top: 1px solid rgba(31, 28, 25, 0.08);
+    margin-top: 36px;
+    padding-top: 18px;
+    grid-column: 1 / -1;
+  }
+
+  /* ------------- Reveal animation ------------- */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal {
+    animation: rise 0.7s cubic-bezier(0.18, 0.7, 0.2, 1) both;
+  }
+  .reveal:nth-child(1) { animation-delay: 0.05s; }
+  .reveal:nth-child(2) { animation-delay: 0.18s; }
+  .reveal:nth-child(3) { animation-delay: 0.30s; }
+  .reveal:nth-child(4) { animation-delay: 0.42s; }
+  .reveal:nth-child(5) { animation-delay: 0.54s; }
+  .reveal:nth-child(6) { animation-delay: 0.66s; }
+  .reveal:nth-child(7) { animation-delay: 0.78s; }
+
+  /* ------------- Responsive ------------- */
+  @media (max-width: 960px) {
+    .grid-two { grid-template-columns: 1fr; gap: 36px; }
+    .features { grid-template-columns: repeat(2, 1fr); }
+    .samples-grid { grid-template-columns: 1fr; }
+    .quick-board { grid-template-columns: 1fr; }
+    .specimen { grid-template-columns: 1fr; box-shadow: 5px 5px 0 var(--ink); }
+    .specimen-input { border-right: none; border-bottom: 1px solid var(--ink); }
+    .demo-board { grid-template-columns: 1fr; }
+    .hero-decoration.top-right { display: none; }
+    footer .container { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .container { padding: 0 22px; }
+    .topbar { padding: 12px 20px; }
+    .topbar-right { gap: 14px; font-size: 10px; }
+    .topbar-meta { display: none; }
+    .features { grid-template-columns: 1fr; }
+    .section { padding: 64px 0; }
+    .hero { padding: 110px 0 60px; }
+    footer .container { grid-template-columns: 1fr; }
+  }
+
+  /* ------------- A11y ------------- */
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-id">ABB · OFFLINE-CODER · v0.1.0</span>
+    <span class="topbar-meta">RAPID CODE GENERATOR · IRC5 / OMNICORE</span>
+  </div>
+  <div class="topbar-right">
+    <a class="topbar-link" href="#abstract">概览</a>
+    <a class="topbar-link" href="#demo">演示</a>
+    <a class="topbar-link" href="#architecture">架构</a>
+    <a class="topbar-link" href="#samples">样例</a>
+    <a class="topbar-link" href="#install">部署</a>
+    <span class="status-pill"><span class="led"></span>OFFLINE READY</span>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-decoration top-right">
+      <span><span class="key">FILE</span> &nbsp;index.html</span>
+      <span><span class="key">REV</span> &nbsp;A · 2026-05-17</span>
+      <span><span class="key">ISSUE</span> 01</span>
+      <span><span class="key">FORMAT</span> A0</span>
+      <span><span class="key">SCALE</span> 1 : 1</span>
+    </div>
+
+    <div class="hero-cluster">
+      <div class="hero-eyebrow reveal">
+        <span>// PROJECT 01 — ABB SPRAY PAINTING</span>
+        <span class="divider"></span>
+        <span>OFFLINE · LOCAL LLM · RAG</span>
+      </div>
+
+      <h1 class="hero-title reveal">
+        abb-<span class="stroke">offline</span>-coder<span class="punct">.</span>
+      </h1>
+
+      <p class="hero-blurb reveal">
+        <span class="nb">把中文一句话变成 <b>ABB RAPID 喷涂程序</b>。</span><wbr>
+        <span class="nb">本地小模型 + 官方手册 RAG，</span><wbr><span class="nb">工业 PC 断网可用。</span>
+      </p>
+
+      <ul class="hero-tags reveal">
+        <li>IRB 52</li>
+        <li>IRB 5500</li>
+        <li>IRB 5710</li>
+        <li>IRC5 / OmniCore</li>
+        <li>RobotStudio</li>
+        <li>Qwen2.5-Coder · 7B / 3B</li>
+        <li>ChromaDB · bge-zh</li>
+      </ul>
+
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="https://github.com/Hollis36/abb-offline-coder" target="_blank">
+          <span class="icon">⌬</span> <span>Code</span> <span class="arrow">↗</span>
+        </a>
+        <a class="btn" href="#paper">
+          <span class="icon">▢</span> <span>Paper</span> <span class="arrow">↗</span>
+        </a>
+        <a class="btn" href="#video">
+          <span class="icon">▶</span> <span>Video</span> <span class="arrow">↗</span>
+        </a>
+        <a class="btn btn-accent" href="#demo">
+          <span class="icon">⏵</span> <span>Live Demo</span> <span class="arrow">↗</span>
+        </a>
+      </div>
+
+      <!-- Hero specimen -->
+      <div class="specimen reveal">
+        <span class="specimen-label">SPECIMEN · A-01 INPUT / OUTPUT</span>
+
+        <div class="specimen-input">
+          <div class="specimen-input-head"><span class="dot"></span>用户输入 · 中文</div>
+          <div class="specimen-input-text">"<span class="nb">对 600×400 矩形面</span><wbr><span class="nb">做 Z 字扫描喷涂，</span><wbr><span class="nb">行距 50 mm，</span><wbr><span class="nb">喷涂速度 v200</span>"</div>
+          <dl class="specimen-meta">
+            <dt>类别</dt> <dd>zigzag_scan</dd>
+            <dt>检索</dt> <dd>top-5 / 7497</dd><br>
+            <dt>模型</dt> <dd>Qwen2.5-Coder-7B Q4</dd><br>
+            <dt>耗时</dt> <dd>≈ 25 s</dd>
+          </dl>
+        </div>
+
+        <div class="specimen-output">
+          <div class="specimen-output-head">
+            <span>OUTPUT · PaintZigzag.mod</span>
+            <span class="led-row">
+              <span class="led-dot r"></span>
+              <span class="led-dot y"></span>
+              <span class="led-dot g"></span>
+            </span>
+          </div>
+          <pre class="specimen-output-code"><span class="cmt">! Z 字扫描喷涂 — 500×400 矩形面，行距 50 mm</span>
+<span class="kw">MODULE</span> <span class="fn">PaintZigzag</span>
+    <span class="kw">PERS</span> <span class="ty">tooldata</span>  tSprayGun := [<span class="kw">TRUE</span>,…];
+    <span class="kw">PERS</span> <span class="ty">wobjdata</span>  wobjPart  := [<span class="kw">FALSE</span>,…];
+    <span class="kw">CONST</span> <span class="ty">speeddata</span> vPaint   := [<span class="num">150</span>,<span class="num">400</span>,<span class="num">5000</span>,<span class="num">1000</span>];
+    <span class="kw">PERS</span> <span class="ty">num</span> nRowSpacing := <span class="num">50</span>;
+
+    <span class="kw">PROC</span> <span class="fn">main</span>()
+        <span class="kw">FOR</span> i <span class="kw">FROM</span> <span class="num">0</span> <span class="kw">TO</span> <span class="num">8</span> <span class="kw">DO</span>
+            <span class="cmt">! 偶数行 X+, 奇数行 X-</span>
+            <span class="kw">MoveL</span> pStart, vPaint, fine, tSprayGun;
+            <span class="kw">SetDO</span> doSprayOn, <span class="num">1</span>;
+            <span class="kw">MoveL</span> pEnd,   vPaint, z1,   tSprayGun;
+            <span class="kw">SetDO</span> doSprayOn, <span class="num">0</span>;
+        <span class="kw">ENDFOR</span>
+    <span class="kw">ENDPROC</span>
+<span class="kw">ENDMODULE</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ ABSTRACT ============ -->
+<section class="section" id="abstract">
+  <div class="container">
+    <div class="grid-two">
+      <div>
+        <span class="label"><span class="label-num">01</span> Abstract</span>
+        <h2 class="section-title"><span class="nb">现场工程师不上网，</span><wbr><span class="nb">也能<em>「写一句话出一个程序」</em>。</span></h2>
+        <p class="lead">
+          ABB 喷涂机器人编程涉及大量专业概念：笔刷工艺（BrushData）、TriggIO 同步喷枪、
+          TCP 校准、扫描轨迹规划。工业 PC 长期断网，工程师只能翻官方手册手写。
+        </p>
+        <p class="lead">
+          本工具把<b>本地代码小模型</b>（Qwen2.5-Coder-7B Q4，4.5 GB）与<b>ABB 官方手册向量检索</b>（10 本 PDF，7497 切片）结合，
+          通过命令行用中文描述需求即可生成符合 RAPID 标准的 <code>.mod</code> 模块代码，可直接拖入 RobotStudio 验证。
+          全程不需要联网。
+        </p>
+      </div>
+      <dl class="abstract-side">
+        <dt>// PROBLEM</dt>
+        <dd>断网 · 专业概念繁多 · 手写易错</dd>
+
+        <dt>// APPROACH</dt>
+        <dd>Local LLM + RAG over official manuals</dd>
+        <dd>查询改写 · 混合检索 · 后处理校验</dd>
+
+        <dt>// PLATFORM</dt>
+        <dd>RobotStudio + IRC5 / OmniCore</dd>
+        <dd>Windows / macOS / Linux</dd>
+
+        <dt>// MODELS</dt>
+        <dd>LLM: Qwen2.5-Coder · 7B Q4_K_M</dd>
+        <dd>Embed: BAAI/bge-small-zh-v1.5</dd>
+        <dd>Vector: ChromaDB (local)</dd>
+
+        <dt>// VERIFIED</dt>
+        <dd>67 unit tests · 0.5 s</dd>
+        <dd>4 end-to-end painting cases</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEMO ============ -->
+<section class="section" id="demo">
+  <div class="container">
+    <span class="label"><span class="label-num">02</span> Live Pipeline · Try it</span>
+    <h2 class="section-title"><span class="nb">改一行需求</span><wbr> <em><span class="nb">看 .mod</span></em><wbr> <span class="nb">即时重生成。</span></h2>
+    <p class="lead">编辑左侧中文需求，或点示例 chip 一键填充；按 <code>RUN</code> 看输入穿过查询改写、向量检索、本地 LLM、语法校验，最终流式落地为可下载的 <code>.mod</code> 文件。</p>
+
+    <div class="demo-board">
+      <div class="demo-panel">
+        <div class="demo-panel-head">
+          <span>INPUT / PIPELINE</span>
+          <span class="step-id" id="demo-step-label">IDLE</span>
+        </div>
+        <div class="demo-input">
+          <div class="demo-input-head">
+            <h4>用户中文需求</h4>
+            <div class="controller-toggle" id="ctrl-toggle" role="radiogroup" aria-label="目标控制器">
+              <button type="button" data-ctrl="IRC5" class="active" role="radio" aria-checked="true">IRC5</button>
+              <button type="button" data-ctrl="IRC5P" role="radio" aria-checked="false">IRC5P</button>
+            </div>
+          </div>
+          <textarea class="demo-prompt-input" id="demo-prompt-input" rows="3" spellcheck="false" aria-label="中文需求输入">用 TriggIO 实现精确同步：从 p1 到 p2 直线运动中，距 p1 80mm 时打开喷枪，距 p1 500mm 时关闭喷枪</textarea>
+          <div class="demo-examples">
+            <span class="ex-label">示例</span>
+            <button type="button" class="ex-chip" data-ex="trig">TriggIO 同步</button>
+            <button type="button" class="ex-chip" data-ex="zigzag">Z 字 600×400</button>
+            <button type="button" class="ex-chip" data-ex="linear">直线扫描</button>
+            <button type="button" class="ex-chip" data-ex="arc">圆弧轨迹</button>
+            <button type="button" class="ex-chip" data-ex="brush">改流量 90</button>
+          </div>
+
+          <ol class="demo-step-list" id="demo-steps">
+            <li data-step="1">
+              <span class="index">01</span>
+              <div>
+                <div class="step-body">Query Rewrite</div>
+                <span class="step-detail">归一化 · 抽取关键词 · 任务分类</span>
+              </div>
+            </li>
+            <li data-step="2">
+              <span class="index">02</span>
+              <div>
+                <div class="step-body">Hybrid Retrieval</div>
+                <span class="step-detail">bge-zh 向量检索 + BM25 关键词，融合 top-5</span>
+              </div>
+            </li>
+            <li data-step="3">
+              <span class="index">03</span>
+              <div>
+                <div class="step-body">Context Assembly</div>
+                <span class="step-detail">System prompt + few-shot + 检索片段 (≤ 3.5K tokens)</span>
+              </div>
+            </li>
+            <li data-step="4">
+              <span class="index">04</span>
+              <div>
+                <div class="step-body">Local LLM</div>
+                <span class="step-detail">Ollama → Qwen2.5-Coder-7B Q4 · 流式生成</span>
+              </div>
+            </li>
+            <li data-step="5">
+              <span class="index">05</span>
+              <div>
+                <div class="step-body">RAPID Post-process</div>
+                <span class="step-detail">补 MODULE/PROC · 关键字大写 · 语法校验</span>
+              </div>
+            </li>
+            <li data-step="6">
+              <span class="index">06</span>
+              <div>
+                <div class="step-body">Write .mod</div>
+                <span class="step-detail">→ output/PaintTrigSync.mod · ✓ 校验通过</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+        <div class="demo-controls">
+          <button class="ghost" id="demo-reset">RESET</button>
+          <button class="run-btn" id="demo-run">⏵ RUN PIPELINE</button>
+        </div>
+      </div>
+
+      <div class="demo-output">
+        <div class="demo-output-head">
+          <span class="file-name" id="demo-filename">PaintTrigSync_IRC5.mod</span>
+          <span id="demo-meta">awaiting…</span>
+        </div>
+        <pre class="demo-output-code" id="demo-output"><span class="cmt">// 编辑左侧需求 → 按 RUN，完整 .mod 会在这里流式生成</span></pre>
+        <div class="demo-output-actions">
+          <button class="output-btn" id="demo-copy" type="button" disabled>⧉ COPY</button>
+          <button class="output-btn" id="demo-download" type="button" disabled>⬇ DOWNLOAD .mod</button>
+          <span class="output-note">WEB PREVIEW · 规则解析 · 真实工具用本地 LLM + RAG</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section class="section" id="architecture">
+  <div class="container">
+    <span class="label"><span class="label-num">03</span> Architecture</span>
+    <h2 class="section-title"><span class="nb">分层流水线</span> <em><span class="nb">· 可单元替换 ·</span></em><wbr> <span class="nb">全离线。</span></h2>
+    <p class="lead">从 CLI 入口到 <code>.mod</code> 文件落地，每一层都是单一职责的纯函数 / 单类。换 LLM、换向量库、换嵌入模型都不需要改其它层。</p>
+
+    <div class="arch-wrap">
+      <pre class="arch-pre">┌────────────────────────────────────────────────────────────────────┐
+│                                                                    │
+│   USER  ─────►  CLI (typer)  ─────►  Agent Orchestrator            │
+│   中文需求      gen / chat              │                          │
+│                                         ▼                          │
+│                              ┌──────────────────────┐              │
+│                              │  Query Rewriter (CN)  │              │
+│                              └──────────┬───────────┘              │
+│                                         ▼                          │
+│              ┌──────────────────────────────────────┐              │
+│              │  Hybrid Retriever  (vector + BM25)   │              │
+│              │  ┌──────────────┐    ┌────────────┐  │              │
+│              │  │ bge-small-zh ├──► │  ChromaDB  │  │              │
+│              │  │ (CPU)        │    │  7497 ✂   │  │              │
+│              │  └──────────────┘    └────────────┘  │              │
+│              └──────────────────┬───────────────────┘              │
+│                                 ▼                                  │
+│                  ┌──────────────────────────────┐                  │
+│                  │  Context Builder · Prompt    │                  │
+│                  │  system + few-shot + ctx     │                  │
+│                  └──────────────┬───────────────┘                  │
+│                                 ▼                                  │
+│                ┌─────────────────────────────────┐                 │
+│                │  Local LLM · Ollama HTTP        │                 │
+│                │  Qwen2.5-Coder · 7B Q4_K_M     │                 │
+│                └────────────────┬────────────────┘                 │
+│                                 ▼                                  │
+│             ┌─────────────────────────────────────┐                │
+│             │  RAPID Post-process                 │                │
+│             │  • wrap MODULE / inject defaults    │                │
+│             │  • format (keywords, indent)        │                │
+│             │  • validate (regex, 8 rules)        │                │
+│             └────────────────┬────────────────────┘                │
+│                              ▼                                     │
+│                      ●  output/*.mod   →  RobotStudio              │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+    <p class="arch-caption"><span class="fig">FIG. A-03</span> · 端到端管线 · 每个模块 200-400 行 · 67 个单元测试覆盖纯逻辑层 90-100 %</p>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="section" id="features">
+  <div class="container">
+    <span class="label"><span class="label-num">04</span> Highlights</span>
+    <h2 class="section-title"><span class="nb">为现场工程师设计</span> <em>·</em><wbr> <span class="nb">不是为 demo 设计。</span></h2>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-num">F-01</div>
+        <h3>真 · <em>离线</em></h3>
+        <p>LLM 推理、嵌入模型、向量检索全部本地。拔网线、断 WiFi、隔离工厂网都能完整工作。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-02</div>
+        <h3>用 <em>中文</em> 描述</h3>
+        <p>中文需求 → 中文注释 + 标准英文 RAPID 代码。术语映射、任务分类自动完成。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-03</div>
+        <h3>RAG <em>over</em> 官方手册</h3>
+        <p>从 10 本 ABB PDF 切出 7497 片，向量+BM25 混合检索注入到 prompt。小模型也能引用 <code>MToolTCPCalib</code> 这种生僻官方指令。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-04</div>
+        <h3>喷涂场景 <em>专精</em></h3>
+        <p>5 个 painting few-shot 覆盖直线扫描 / Z 字扫描 / TriggIO 同步 / TCP 校准 / 圆弧轨迹。<code>BrushData</code>、扇幅、雾化全识别。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-05</div>
+        <h3><em>轻量</em>·工业 PC 友好</h3>
+        <p>Q4 量化模型 4.5 GB，CPU 推理 ≈ 25 s。无独立 GPU 可用。最小 3B 配置降到 8-15 s。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-06</div>
+        <h3>语法 <em>自校</em></h3>
+        <p>正则校验 8 类常见错误（块配对、关键字、分号、引号、字符串等）。输出直接导入 RobotStudio 不报错。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-07</div>
+        <h3>Windows / macOS / Linux</h3>
+        <p>显式 UTF-8、跨平台路径、CRLF 自适应。<code>install.bat</code>、<code>install.sh</code>、<code>package_offline.ps1</code> 全套就绪。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-08</div>
+        <h3><em>一键</em> 离线包</h3>
+        <p>有网工作站打包 → tar.gz / zip → 拷贝 → 工业 PC <code>install.bat /offline</code>。U 盘部署。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">F-09</div>
+        <h3>67 unit tests · <em>0.5 s</em></h3>
+        <p>核心纯逻辑（校验、格式化、切片、改写）覆盖率 90-100%。可信赖。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SAMPLES ============ -->
+<section class="section" id="samples">
+  <div class="container">
+    <span class="label"><span class="label-num">05</span> Specimens</span>
+    <h2 class="section-title"><span class="nb">真实生成</span> ·<wbr> <em><span class="nb">非样例桩。</span></em></h2>
+    <p class="lead">下面 3 段代码来自 <code>output/</code> 目录的真实端到端生成。模型本身不知道 <code>MToolTCPCalib</code> 这种 ABB 专属指令名 —— RAG 注入知识后，模型正确写出了使用流程。</p>
+
+    <div class="samples-grid">
+      <article class="sample">
+        <div class="sample-head">
+          <span class="id">A-01 · LINEAR</span>
+          <span class="tag">.mod</span>
+        </div>
+        <div class="sample-prompt">从 p1 高速到 p2 低速喷涂，结束关喷</div>
+        <pre class="sample-code"><span class="kw">MODULE</span> <span class="fn">PaintLine</span>
+    <span class="kw">PERS</span> <span class="ty">tooldata</span> tSprayGun := [<span class="kw">TRUE</span>,…];
+    <span class="kw">CONST</span> <span class="ty">speeddata</span> vPaint := [<span class="num">200</span>,<span class="num">500</span>,…];
+    <span class="cmt">! P1: 高速到位点  P2: 喷涂终点</span>
+    <span class="kw">PROC</span> <span class="fn">main</span>()
+        <span class="kw">ConfL</span>\Off;
+        <span class="kw">MoveJ</span> P1, v1000, fine, tSprayGun;
+        <span class="kw">SetDO</span> doSprayOn, <span class="num">1</span>;
+        <span class="kw">MoveL</span> P2, vPaint, z1,   tSprayGun;
+        <span class="kw">SetDO</span> doSprayOn, <span class="num">0</span>;
+        <span class="kw">MoveJ</span> P1, v1000, z50,  tSprayGun;
+    <span class="kw">ENDPROC</span>
+<span class="kw">ENDMODULE</span></pre>
+        <div class="sample-foot">
+          <span class="ok">VALIDATED</span>
+          <span>78 s · 1.4 KB</span>
+        </div>
+      </article>
+
+      <article class="sample">
+        <div class="sample-head">
+          <span class="id">A-02 · TRIGG-IO</span>
+          <span class="tag">.mod</span>
+        </div>
+        <div class="sample-prompt">用 TriggIO 同步：距起点 80mm 开喷，500mm 关喷</div>
+        <pre class="sample-code"><span class="kw">MODULE</span> <span class="fn">PaintTrigSync</span>
+    <span class="kw">VAR</span> <span class="ty">triggdata</span> trgSprayOn;
+    <span class="kw">VAR</span> <span class="ty">triggdata</span> trgSprayOff;
+    <span class="kw">PROC</span> <span class="fn">main</span>()
+        <span class="kw">ConfL</span>\Off; <span class="kw">SingArea</span>\Wrist;
+        <span class="cmt">! 距 P1 80mm 时开喷</span>
+        <span class="kw">TriggIO</span> trgSprayOn,  <span class="num">80</span> \DOp:=doSprayOn,<span class="num">1</span>;
+        <span class="kw">TriggIO</span> trgSprayOff, <span class="num">500</span> \DOp:=doSprayOn,<span class="num">0</span>;
+        <span class="kw">MoveJ</span> P1, v1000, fine, tSprayGun;
+        <span class="kw">TriggL</span> P2, vPaint, trgSprayOn,  z1,   tSprayGun;
+        <span class="kw">TriggL</span> P2, vPaint, trgSprayOff, fine, tSprayGun;
+    <span class="kw">ENDPROC</span>
+<span class="kw">ENDMODULE</span></pre>
+        <div class="sample-foot">
+          <span class="ok">VALIDATED</span>
+          <span>194 s · 2.1 KB</span>
+        </div>
+      </article>
+
+      <article class="sample">
+        <div class="sample-head">
+          <span class="id">A-03 · TCP-CALIB</span>
+          <span class="tag">.mod</span>
+        </div>
+        <div class="sample-prompt">用 MToolTCPCalib 写 4 点 TCP 校准</div>
+        <pre class="sample-code"><span class="kw">MODULE</span> <span class="fn">CalibSprayTCP</span>
+    <span class="cmt">! 喷枪 TCP 校准 · 4 点法</span>
+    <span class="kw">PERS</span> <span class="ty">tooldata</span> tSprayGun;
+    <span class="kw">PROC</span> <span class="fn">main</span>()
+        <span class="kw">ConfL</span>\Off; <span class="kw">SingArea</span>\Wrist;
+        <span class="kw">TPWrite</span> <span class="str">"== TCP 校准 (4 点法) =="</span>;
+        <span class="kw">TPWrite</span> <span class="str">"1. 进入 Calibration > Define Tool"</span>;
+        <span class="kw">TPWrite</span> <span class="str">"2. 选 MToolTCPCalib 模式"</span>;
+        <span class="kw">TPWrite</span> <span class="str">"3. 依次对准固定参考针 4 点"</span>;
+        <span class="kw">WaitTime</span> <span class="num">3</span>;
+        <span class="cmt">! 结果自动写入 tSprayGun.tframe</span>
+    <span class="kw">ENDPROC</span>
+<span class="kw">ENDMODULE</span></pre>
+        <div class="sample-foot">
+          <span class="ok">VALIDATED</span>
+          <span>102 s · 1.9 KB</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SPEC SHEET ============ -->
+<section class="section" id="spec">
+  <div class="container">
+    <span class="label"><span class="label-num">06</span> Spec Sheet</span>
+    <h2 class="section-title"><span class="nb">技术指标</span> <em>·</em><wbr> <span class="nb">实测数据。</span></h2>
+
+    <div class="spec">
+      <div class="spec-head">
+        <span>PARAMETER</span>
+        <span class="right">VALUE / MEASURED</span>
+      </div>
+
+      <div class="spec-row"><span class="key">Source code</span><span class="val">3,664<span class="unit">lines · 37 files</span></span></div>
+      <div class="spec-row"><span class="key">Unit tests</span><span class="val"><span class="check">✓</span>67 / 67 passed<span class="unit">0.5 s</span></span></div>
+      <div class="spec-row"><span class="key">Knowledge base</span><span class="val">7,497<span class="unit">chunks · 10 PDFs · 54 MB</span></span></div>
+      <div class="spec-row"><span class="key">Vector store</span><span class="val">ChromaDB<span class="unit">local · 52 MB persisted</span></span></div>
+      <div class="spec-row"><span class="key">Embedding model</span><span class="val">bge-small-zh-v1.5<span class="unit">92 MB · CPU</span></span></div>
+      <div class="spec-row"><span class="key">LLM (primary)</span><span class="val">Qwen2.5-Coder-7B Q4_K_M<span class="unit">4.5 GB · CPU 25 s/req</span></span></div>
+      <div class="spec-row"><span class="key">LLM (fallback)</span><span class="val">Qwen2.5-Coder-3B Q4_K_M<span class="unit">2.0 GB · CPU 10 s/req</span></span></div>
+      <div class="spec-row"><span class="key">End-to-end latency</span><span class="val">8 — 35<span class="unit">seconds (CPU)</span></span></div>
+      <div class="spec-row"><span class="key">Memory peak</span><span class="val">≤ 6<span class="unit">GB (with 7B Q4)</span></span></div>
+      <div class="spec-row"><span class="key">Offline package</span><span class="val">191<span class="unit">MB (.tar.gz, without LLM)</span></span></div>
+      <div class="spec-row"><span class="key">Platform support</span><span class="val">Windows / macOS / Linux<span class="unit">Python ≥ 3.10</span></span></div>
+      <div class="spec-row"><span class="key">License</span><span class="val">MIT<span class="unit">Hollis36 · 2026</span></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUICKSTART ============ -->
+<section class="section" id="install">
+  <div class="container">
+    <span class="label"><span class="label-num">07</span> Quickstart</span>
+    <h2 class="section-title"><span class="nb">五行命令</span> <em>·</em><wbr> <span class="nb">上手。</span></h2>
+    <p class="lead">假设已经装好 <code>Python 3.10+</code> 和 <code>Ollama</code>。详细的 Windows 工业 PC 部署看 <a href="WINDOWS.html" style="color:var(--signal);text-decoration:underline">WINDOWS.md</a>。</p>
+
+    <div class="quick-board">
+      <div class="quick-card">
+        <div class="quick-card-head">
+          <span class="plat">macOS / Linux</span>
+          <span class="ver">bash · zsh</span>
+        </div>
+        <pre><span class="comment"># 1) 克隆 + 安装</span>
+<span class="prompt">$</span> git clone https://github.com/Hollis36/abb-offline-coder.git
+<span class="prompt">$</span> cd abb-offline-coder
+<span class="prompt">$</span> bash scripts/install.sh
+
+<span class="comment"># 2) 拉模型（首次需联网，~4.5 GB）</span>
+<span class="prompt">$</span> ollama serve &
+<span class="prompt">$</span> ollama pull qwen2.5-coder:7b-instruct-q4_K_M
+
+<span class="comment"># 3) 把 ABB 手册放入 data/raw/pdf/ 后建库</span>
+<span class="prompt">$</span> python scripts/build_knowledge_base.py
+
+<span class="comment"># 4) 生成代码</span>
+<span class="prompt">$</span> abb-agent gen "对 600x400 矩形面做 Z 字扫描喷涂，行距 50mm"</pre>
+      </div>
+
+      <div class="quick-card">
+        <div class="quick-card-head">
+          <span class="plat">Windows · 工业 PC</span>
+          <span class="ver">cmd · powershell</span>
+        </div>
+        <pre><span class="comment">REM 1) 安装（自动建 .venv + 装依赖）</span>
+<span class="prompt">&gt;</span> scripts\install.bat
+
+<span class="comment">REM 2) 启 Ollama 服务（保持开启，新窗口）</span>
+<span class="prompt">&gt;</span> ollama serve
+
+<span class="comment">REM 3) 拉模型 + 建知识库</span>
+<span class="prompt">&gt;</span> ollama pull qwen2.5-coder:7b-instruct-q4_K_M
+<span class="prompt">&gt;</span> python scripts\build_knowledge_base.py
+
+<span class="comment">REM 4) 健康体检 + 生成</span>
+<span class="prompt">&gt;</span> abb-agent doctor
+<span class="prompt">&gt;</span> abb-agent gen "用 TriggIO 实现喷枪同步开关"</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CITATION ============ -->
+<section class="section" id="paper">
+  <div class="container">
+    <span class="label"><span class="label-num">08</span> Cite</span>
+    <h2 class="section-title"><span class="nb">如果它帮到了你<em>。</em></span></h2>
+    <p class="lead">本项目是 MIT 协议开源工具，欢迎在内部部署、二次开发、写文档时引用。</p>
+
+    <div class="citation">
+      <button class="citation-copy" id="cite-copy">COPY</button>
+<span class="key">@software</span>{<span class="val">hollis36_abb_offline_coder_2026</span>,
+  <span class="key">title</span>   = {<span class="val">abb-offline-coder: Offline AI Assistant for ABB RAPID Painting</span>},
+  <span class="key">author</span>  = {<span class="val">Hollis36</span>},
+  <span class="key">year</span>    = {<span class="val">2026</span>},
+  <span class="key">url</span>     = {<span class="val">https://github.com/Hollis36/abb-offline-coder</span>},
+  <span class="key">license</span> = {<span class="val">MIT</span>},
+  <span class="key">note</span>    = {<span class="val">Local LLM (Qwen2.5-Coder) + RAG over ABB official manuals</span>}
+}</div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div>
+      <h5>abb-offline-coder</h5>
+      <p>离线 AI 编程助手 · ABB 喷涂机器人 · 中文需求 → RAPID 模块代码</p>
+      <p style="margin-top:10px">MIT License · 2026 · by <a href="https://github.com/Hollis36">Hollis36</a></p>
+    </div>
+    <div>
+      <h5>Repo</h5>
+      <p><a href="https://github.com/Hollis36/abb-offline-coder">Source code</a></p>
+      <p><a href="https://github.com/Hollis36/abb-offline-coder/issues">Issues</a></p>
+      <p><a href="https://github.com/Hollis36/abb-offline-coder/releases">Releases</a></p>
+    </div>
+    <div>
+      <h5>Docs</h5>
+      <p><a href="https://github.com/Hollis36/abb-offline-coder/blob/main/README.md">README</a></p>
+      <p><a href="https://github.com/Hollis36/abb-offline-coder/blob/main/docs/ARCHITECTURE.md">Architecture</a></p>
+      <p><a href="https://github.com/Hollis36/abb-offline-coder/blob/main/docs/WINDOWS.md">Windows guide</a></p>
+    </div>
+    <div>
+      <h5>Resources</h5>
+      <p><a href="https://library.abb.com/">ABB Library</a></p>
+      <p><a href="https://ollama.com/">Ollama</a></p>
+      <p><a href="https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct">Qwen2.5-Coder</a></p>
+    </div>
+
+    <div class="disclaimer">
+      免责声明 · "ABB"、"RobotStudio"、"RAPID"、"IRC5"、"OmniCore"、"IRB" 等是 ABB Ltd. 或其关联公司的商标 / 注册商标。本项目与 ABB Ltd. 无任何关联，未受 ABB 官方支持、认可或赞助。所有生成的 RAPID 代码必须在 RobotStudio 中仿真验证并经现场工程师人工复核后才能上机。本工具按 "AS IS" 提供，作者不对代码正确性、机器人动作安全性或人身/财产损失承担任何责任。
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ============ INTERACTIVE DEMO ============
+  // Client-side rule parser + template generator. NOT the real LLM —
+  // the real tool runs Qwen2.5-Coder + RAG locally via Ollama (see install section).
+
+  const EXAMPLES = {
+    trig:   '用 TriggIO 实现精确同步：从 p1 到 p2 直线运动中，距 p1 80mm 时打开喷枪，距 p1 500mm 时关闭喷枪',
+    zigzag: '对 600x400 平板做 Z 字扫描喷涂，行距 50mm，速度 v200',
+    linear: '从 p1 到 p2 直线扫描喷涂，行程 800mm，速度 v300',
+    arc:    '在工件表面做圆弧轨迹喷涂，半径 200mm，速度 v150',
+    brush:  '在 500x300mm 平板上 Z 字喷涂，行距 40mm，流量 90，扇面 350，雾化 60',
+  };
+
+  function parsePrompt(text, controller) {
+    const t = text || '';
+    let scenario;
+    if (/trigg|精确同步|精同步|同步喷|开关枪/i.test(t)) scenario = 'triggio';
+    else if (/圆弧|弧形|弧线|曲线/.test(t) || /\b(movec|paintc)\b/i.test(t)) scenario = 'arc';
+    else if (/z\s*字|蛇形|往返|来回|栅格|zigzag/i.test(t)) scenario = 'zigzag';
+    else if (/直线|线性|\b(movel|paintl)\b/i.test(t)) scenario = 'linear';
+    else if (/\d{2,4}\s*[x×\*乘]\s*\d{2,4}/.test(t)) scenario = 'zigzag';
+    else scenario = 'linear';
+
+    const sizeM = t.match(/(\d{2,4})\s*[x×\*乘]\s*(\d{2,4})/i);
+    const width  = sizeM ? parseInt(sizeM[1], 10) : 600;
+    const height = sizeM ? parseInt(sizeM[2], 10) : 400;
+
+    const pitchM = t.match(/(?:行距|步距|间距|pitch)\s*(?:为|是|=|:)?\s*(\d+)/i);
+    const pitch  = pitchM ? Math.max(5, parseInt(pitchM[1], 10)) : 50;
+
+    const speedM = t.match(/\bv(\d{2,4})\b/i) || t.match(/速度\s*(?:为|是|=|:)?\s*v?(\d+)/i);
+    const speed  = speedM ? parseInt(speedM[1], 10) : 200;
+
+    const lenM = t.match(/(?:行程|长度|距离)\s*(?:为|是|=|:)?\s*(\d+)/);
+    const linearLen = lenM ? parseInt(lenM[1], 10) : 600;
+
+    const radM = t.match(/(?:半径|r)\s*(?:为|是|=|:)?\s*(\d+)/i);
+    const radius = radM ? parseInt(radM[1], 10) : 200;
+
+    const trigOnM  = t.match(/距[^,，。.\n]{0,20}?(\d+)\s*mm[^,，。.\n]{0,12}?(?:打开|开)/i);
+    const trigOffM = t.match(/距[^,，。.\n]{0,20}?(\d+)\s*mm[^,，。.\n]{0,12}?(?:关闭|关)/i);
+
+    const flowM = t.match(/流量\s*(?:为|是|=|:)?\s*(\d+)/);
+    const fanM  = t.match(/扇面\s*(?:为|是|=|:)?\s*(\d+)/);
+    const atomM = t.match(/雾化\s*(?:为|是|=|:)?\s*(\d+)/);
+
+    return {
+      controller, scenario,
+      width, height, pitch,
+      speed, linearLen, radius,
+      trigOn:  trigOnM  ? parseInt(trigOnM[1],  10) : 80,
+      trigOff: trigOffM ? parseInt(trigOffM[1], 10) : 500,
+      flow: flowM ? parseInt(flowM[1], 10) : 80,
+      fan:  fanM  ? parseInt(fanM[1],  10) : 300,
+      atom: atomM ? parseInt(atomM[1], 10) : 50,
+    };
+  }
+
+  function moduleName(p) {
+    const base = { triggio: 'PaintTrigSync', arc: 'PaintArc', zigzag: 'PaintZigzag', linear: 'PaintLinear' }[p.scenario];
+    return `${base}_${p.controller}`;
+  }
+  function describe(p) {
+    const tail = p.controller === 'IRC5P' ? '(IRC5P · PaintL + brushdata)' : '(IRC5 · MoveL + SetDO)';
+    if (p.scenario === 'triggio') return `TriggIO 精确同步喷枪开关 ${tail}`;
+    if (p.scenario === 'arc')     return `圆弧轨迹喷涂 半径 ${p.radius}mm ${tail}`;
+    if (p.scenario === 'zigzag')  return `${p.width}x${p.height} 平板 Z 字扫描 · 行距 ${p.pitch}mm ${tail}`;
+    return `直线扫描喷涂 行程 ${p.linearLen}mm · v${p.speed} ${tail}`;
+  }
+  const ORIENT = '[1.0,0.0,0.0,0.0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]';
+  function tgt(x, y, z) { return `[[${x},${y},${z}],${ORIENT}]`; }
+
+  function genHeader(p) {
+    let h = `MODULE ${moduleName(p)}\n`;
+    h += `    ! ${describe(p)}\n\n`;
+    h += `    PERS tooldata tSprayGun := [TRUE, [[0,0,200],[1,0,0,0]], [2.5,[0,0,80],[1,0,0,0],0,0,0]];\n`;
+    h += `    PERS wobjdata wobjPart := [FALSE, TRUE, "", [[0,0,0],[1,0,0,0]], [[0,0,0],[1,0,0,0]]];\n`;
+    h += `    CONST speeddata vPaint := [${p.speed}, 500, 5000, 1000];\n`;
+    if (p.controller === 'IRC5P') {
+      h += `    ! [WARNING] brushdata 字段顺序随 RobotWare Paint 版本不同 —\n`;
+      h += `    ! 上控制器前必须用 RobotStudio Brush Table 对照校核字段顺序!\n`;
+      h += `    ! 字段: flow, fan, atom, preOpen, postClose, brushOnTime, accept_brush, name, brush_table_idx\n`;
+      h += `    PERS brushdata bdMain := [${p.flow}, ${p.fan}, ${p.atom}, 50, 50, 0, FALSE, "bdMain", 0];\n`;
+    }
+    return h;
+  }
+  function genZigzag(p) {
+    const { controller, width, height, pitch } = p;
+    const z = 300;
+    let b = `\n    PROC main()\n        ConfL\\Off;\n        SingArea\\Wrist;\n\n`;
+    b += `        ! ${width}x${height} 平板 Z 字扫描 · 行距 ${pitch}mm\n`;
+    const rows = Math.min(20, Math.floor(height / pitch) + 1);
+    let dir = 1;
+    for (let i = 0; i < rows; i++) {
+      const y = i * pitch;
+      const sx = dir > 0 ? 0 : width;
+      const ex = dir > 0 ? width : 0;
+      if (i === 0) {
+        b += `        MoveJ ${tgt(sx, y, z)}, v1000, fine, tSprayGun\\WObj:=wobjPart;\n`;
+      } else {
+        b += `        MoveL ${tgt(sx, y, z)}, v500, fine, tSprayGun\\WObj:=wobjPart;\n`;
+      }
+      if (controller === 'IRC5P') {
+        b += `        PaintL ${tgt(ex, y, z)}, vPaint, bdMain, z10, tSprayGun\\WObj:=wobjPart;\n`;
+      } else {
+        b += `        SetDO doSprayOn, 1;\n`;
+        b += `        MoveL ${tgt(ex, y, z)}, vPaint, z10, tSprayGun\\WObj:=wobjPart;\n`;
+        b += `        SetDO doSprayOn, 0;\n`;
+      }
+      dir = -dir;
+    }
+    if (rows >= 20 && Math.floor(height / pitch) + 1 > 20) {
+      b += `        ! ... (${Math.floor(height / pitch) + 1 - 20} 行省略 · 完整版由 CLI 生成)\n`;
+    }
+    b += `    ENDPROC\n`;
+    return b;
+  }
+  function genLinear(p) {
+    const z = 300;
+    let b = `\n    PROC main()\n        ConfL\\Off;\n        SingArea\\Wrist;\n\n`;
+    b += `        ! 直线扫描 · ${p.linearLen}mm\n`;
+    b += `        MoveJ ${tgt(0, 0, z)}, v1000, fine, tSprayGun\\WObj:=wobjPart;\n`;
+    if (p.controller === 'IRC5P') {
+      b += `        PaintL ${tgt(p.linearLen, 0, z)}, vPaint, bdMain, z10, tSprayGun\\WObj:=wobjPart;\n`;
+    } else {
+      b += `        SetDO doSprayOn, 1;\n`;
+      b += `        MoveL ${tgt(p.linearLen, 0, z)}, vPaint, z10, tSprayGun\\WObj:=wobjPart;\n`;
+      b += `        SetDO doSprayOn, 0;\n`;
+    }
+    b += `    ENDPROC\n`;
+    return b;
+  }
+  function genArc(p) {
+    const z = 300;
+    const r = p.radius;
+    let b = `\n    PROC main()\n        ConfL\\Off;\n        SingArea\\Wrist;\n\n`;
+    b += `        ! 圆弧轨迹 · 半径 ${r}mm\n`;
+    b += `        MoveJ ${tgt(0, 0, z)}, v1000, fine, tSprayGun\\WObj:=wobjPart;\n`;
+    if (p.controller === 'IRC5P') {
+      b += `        PaintC ${tgt(r, r, z)}, ${tgt(2 * r, 0, z)}, vPaint, bdMain, z10, tSprayGun\\WObj:=wobjPart;\n`;
+    } else {
+      b += `        SetDO doSprayOn, 1;\n`;
+      b += `        MoveC ${tgt(r, r, z)}, ${tgt(2 * r, 0, z)}, vPaint, z10, tSprayGun\\WObj:=wobjPart;\n`;
+      b += `        SetDO doSprayOn, 0;\n`;
+    }
+    b += `    ENDPROC\n`;
+    return b;
+  }
+  function genTrig(p) {
+    if (p.controller === 'IRC5P') {
+      let b = `\n    PROC main()\n`;
+      b += `        ! IRC5P 模式: brushdata 内置 preOpen/postClose 时序, 无需 TriggIO\n`;
+      b += `        ConfL\\Off;\n        SingArea\\Wrist;\n`;
+      b += `        MoveJ ${tgt(400, 0, 300)}, v1000, fine, tSprayGun\\WObj:=wobjPart;\n`;
+      b += `        PaintL ${tgt(400, 600, 300)}, vPaint, bdMain, z10, tSprayGun\\WObj:=wobjPart;\n`;
+      b += `    ENDPROC\n`;
+      return b;
+    }
+    let b = `    CONST robtarget P1 := [[400,0,300],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];\n`;
+    b += `    CONST robtarget P2 := [[400,600,300],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];\n`;
+    b += `    VAR triggdata trgSprayOn;\n    VAR triggdata trgSprayOff;\n\n`;
+    b += `    PROC main()\n        ConfL\\Off;\n        SingArea\\Wrist;\n`;
+    b += `        ! 距 P1 ${p.trigOn}mm 时 doSprayOn = 1\n`;
+    b += `        TriggIO trgSprayOn,  ${p.trigOn} \\DOp:=doSprayOn, 1;\n`;
+    b += `        ! 距 P1 ${p.trigOff}mm 时 doSprayOn = 0\n`;
+    b += `        TriggIO trgSprayOff, ${p.trigOff} \\DOp:=doSprayOn, 0;\n`;
+    b += `        MoveJ P1, v1000, fine, tSprayGun\\WObj:=wobjPart;\n`;
+    b += `        TriggL P2, vPaint, trgSprayOn,  z1,   tSprayGun\\WObj:=wobjPart;\n`;
+    b += `        TriggL P2, vPaint, trgSprayOff, fine, tSprayGun\\WObj:=wobjPart;\n`;
+    b += `        SetDO doSprayOn, 0;\n    ENDPROC\n`;
+    return b;
+  }
+  function generateMod(p) {
+    const body = ({ triggio: genTrig, arc: genArc, zigzag: genZigzag, linear: genLinear })[p.scenario](p);
+    return `${genHeader(p)}${body}ENDMODULE\n`;
+  }
+
+  function highlight(text) {
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return escaped
+      .replace(/(^|\n)([ \t]*!)([^\n]*)/g, '$1<span class="cmt">$2$3</span>')
+      .replace(/\b(MODULE|ENDMODULE|PROC|ENDPROC|FUNC|ENDFUNC|VAR|PERS|CONST|IF|THEN|ELSE|ENDIF|FOR|FROM|TO|DO|ENDFOR|WHILE|ENDWHILE|MoveJ|MoveL|MoveC|PaintL|PaintC|SetDO|Reset|TriggL|TriggC|TriggIO|ConfL|ConfJ|SingArea|WaitTime|TPWrite|RETURN)\b/g,
+        '<span class="kw">$1</span>')
+      .replace(/\b(tooldata|wobjdata|speeddata|zonedata|robtarget|jointtarget|triggdata|brushdata|signaldo|signaldi|num|bool|string|pos|orient)\b/g,
+        '<span class="ty">$1</span>')
+      .replace(/(&quot;[^&]*?&quot;|"[^"]*")/g, '<span class="str">$1</span>')
+      .replace(/\b(\d+(?:\.\d+)?(?:E\d+)?)\b/g, '<span class="num">$1</span>')
+      .replace(/\b(main)\b/g, '<span class="fn">$1</span>');
+  }
+
+  const runBtn       = document.getElementById('demo-run');
+  const resetBtn     = document.getElementById('demo-reset');
+  const stepLabel    = document.getElementById('demo-step-label');
+  const outputEl     = document.getElementById('demo-output');
+  const metaEl       = document.getElementById('demo-meta');
+  const filenameEl   = document.getElementById('demo-filename');
+  const promptInput  = document.getElementById('demo-prompt-input');
+  const copyBtn      = document.getElementById('demo-copy');
+  const downloadBtn  = document.getElementById('demo-download');
+  const ctrlToggle   = document.getElementById('ctrl-toggle');
+  const stepItems    = Array.from(document.querySelectorAll('#demo-steps li'));
+  const exChips      = Array.from(document.querySelectorAll('.ex-chip'));
+
+  let activeController = 'IRC5';
+  let currentMod = '';
+  let currentFilename = 'PaintTrigSync_IRC5.mod';
+  let timers = [];
+
+  function clearAll() {
+    timers.forEach(t => clearTimeout(t));
+    timers = [];
+  }
+
+  function setControlsAfterRun(enabled) {
+    copyBtn.disabled = !enabled;
+    downloadBtn.disabled = !enabled;
+  }
+
+  function reset() {
+    clearAll();
+    stepItems.forEach(s => s.classList.remove('done'));
+    stepLabel.textContent = 'IDLE';
+    metaEl.textContent = 'awaiting…';
+    outputEl.innerHTML = '<span class="cmt">// 编辑左侧需求 → 按 RUN，完整 .mod 会在这里流式生成</span>';
+    setControlsAfterRun(false);
+  }
+
+  function runPipeline() {
+    const promptText = (promptInput.value || '').trim();
+    if (!promptText) {
+      promptInput.focus();
+      return;
+    }
+    clearAll();
+    stepItems.forEach(s => s.classList.remove('done'));
+    setControlsAfterRun(false);
+    outputEl.innerHTML = '<span class="cmt">// pipeline starting…</span>';
+    metaEl.textContent = 'RUNNING';
+
+    const params = parsePrompt(promptText, activeController);
+    currentMod = generateMod(params);
+    currentFilename = moduleName(params) + '.mod';
+    filenameEl.textContent = currentFilename;
+
+    const stepDelays = [350, 700, 1100, 1500, 2400, 3300];
+    const stepNames  = ['REWRITE', 'RETRIEVE', 'CONTEXT', 'LLM-GEN', 'POST-PROC', 'WRITE'];
+    stepDelays.forEach((delay, i) => {
+      timers.push(setTimeout(() => {
+        stepItems[i].classList.add('done');
+        stepLabel.textContent = `STEP ${String(i + 1).padStart(2, '0')} · ${stepNames[i]}`;
+      }, delay));
+    });
+
+    timers.push(setTimeout(() => {
+      const lines = currentMod.split('\n');
+      let acc = '';
+      outputEl.innerHTML = '';
+      lines.forEach((ln, idx) => {
+        timers.push(setTimeout(() => {
+          acc += ln + (idx < lines.length - 1 ? '\n' : '');
+          outputEl.innerHTML = highlight(acc) + (idx < lines.length - 1 ? '<span style="color:#d94a1f">▌</span>' : '');
+          outputEl.scrollTop = outputEl.scrollHeight;
+        }, idx * 55));
+      });
+    }, 1800));
+
+    const totalMs = 1800 + currentMod.split('\n').length * 55 + 200;
+    timers.push(setTimeout(() => {
+      stepLabel.textContent = 'DONE · ✓ VALID';
+      const bytes = new TextEncoder().encode(currentMod).length;
+      const warnings = activeController === 'IRC5P' ? 2 : 1;
+      metaEl.textContent = `0 errors · ${warnings} warnings · ${(bytes / 1024).toFixed(1)} KB`;
+      setControlsAfterRun(true);
+    }, totalMs));
+  }
+
+  function downloadMod() {
+    if (!currentMod) return;
+    const blob = new Blob([currentMod], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const orig = downloadBtn.textContent;
+    downloadBtn.textContent = '⬇ SAVED ✓';
+    setTimeout(() => downloadBtn.textContent = orig, 1400);
+  }
+
+  function copyMod() {
+    if (!currentMod) return;
+    navigator.clipboard.writeText(currentMod).then(() => {
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = '⧉ COPIED ✓';
+      setTimeout(() => copyBtn.textContent = orig, 1400);
+    });
+  }
+
+  runBtn.addEventListener('click', runPipeline);
+  resetBtn.addEventListener('click', reset);
+  copyBtn.addEventListener('click', copyMod);
+  downloadBtn.addEventListener('click', downloadMod);
+
+  ctrlToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-ctrl]');
+    if (!btn) return;
+    activeController = btn.dataset.ctrl;
+    ctrlToggle.querySelectorAll('button').forEach(b => {
+      const on = b === btn;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  });
+
+  exChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const key = chip.dataset.ex;
+      if (EXAMPLES[key]) {
+        promptInput.value = EXAMPLES[key];
+        promptInput.focus();
+      }
+    });
+  });
+
+  promptInput.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runPipeline();
+    }
+  });
+
+  // ============ CITATION COPY ============
+  const citeBtn = document.getElementById('cite-copy');
+  const citeBlock = document.querySelector('.citation');
+  citeBtn.addEventListener('click', () => {
+    const txt = `@software{hollis36_abb_offline_coder_2026,
+  title   = {abb-offline-coder: Offline AI Assistant for ABB RAPID Painting},
+  author  = {Hollis36},
+  year    = {2026},
+  url     = {https://github.com/Hollis36/abb-offline-coder},
+  license = {MIT},
+  note    = {Local LLM (Qwen2.5-Coder) + RAG over ABB official manuals}
+}`;
+    navigator.clipboard.writeText(txt).then(() => {
+      citeBtn.textContent = 'COPIED ✓';
+      setTimeout(() => citeBtn.textContent = 'COPY', 1600);
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+---
+title: 開始使用
+description: 學習如何使用 CrateFit - 強大的 3D 裝箱演算法函式庫。
+order: 1
+---
+
+## 簡介
+
+CrateFit 是一個專為物流優化設計的 3D 裝箱函式庫。它可以幫助你解決複雜的裝箱問題，例如：
+
+- **貨櫃裝載** - 最大化貨櫃利用率
+- **棧板堆疊** - 建立穩定、高效的棧板配置
+- **電商出貨** - 為訂單選擇最佳箱子尺寸
+- **卡車裝載** - 規劃高效的配送路線
+
+## 功能特色
+
+- 多種裝箱演算法（Extreme Point、Layer Building、EB-AFIT）
+- 完整的限制條件支援（重量、堆疊、旋轉）
+- 即時 3D 視覺化
+- TypeScript 原生支援，完整型別定義
+- 零執行時期依賴
+
+## 快速範例
+
+```typescript
+import { pack } from '@cratefit/pack';
+
+const result = pack({
+  bins: [
+    { id: 'box-1', type: 'box', width: 100, height: 100, depth: 100 }
+  ],
+  items: [
+    { id: 'item-1', width: 50, height: 30, depth: 40 },
+    { id: 'item-2', width: 30, height: 40, depth: 30 }
+  ]
+});
+
+console.log(`已裝入 ${result.stats.packedItems} 個物品`);
+console.log(`利用率：${(result.stats.avgUtilization * 100).toFixed(1)}%`);
+```
+
+## 下一步
+
+- [安裝](/docs/installation) - 在你的專案中安裝 CrateFit
+- [快速開始](/docs/quick-start) - 建立你的第一個裝箱解決方案
+- [API 參考](/docs/api-reference) - 探索完整 API

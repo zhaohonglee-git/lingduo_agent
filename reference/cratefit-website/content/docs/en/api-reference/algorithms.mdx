@@ -1,0 +1,101 @@
+---
+title: Algorithms
+description: Available packing algorithms in CrateFit.
+order: 12
+---
+
+## Overview
+
+CrateFit provides multiple algorithms optimized for different scenarios. Choose based on your use case.
+
+## Extreme Point
+
+The default algorithm. Good general-purpose performance.
+
+```typescript
+pack({ bins, items, options: { algorithm: 'extreme-point' } })
+```
+
+**Best for:**
+- Mixed item sizes
+- General packing problems
+- When you need consistent results
+
+**How it works:**
+Maintains a list of "extreme points" where items can be placed. Selects the best point for each item based on scoring heuristics.
+
+## Layer Building
+
+Builds horizontal layers from bottom to top.
+
+```typescript
+pack({ bins, items, options: { algorithm: 'layer-building' } })
+```
+
+**Best for:**
+- Pallet packing
+- Items with similar heights
+- Stability-focused packing
+
+**How it works:**
+Groups items into layers by height similarity. Fills each layer completely before starting the next.
+
+## Wall Building
+
+Builds vertical walls from one end to the other.
+
+```typescript
+pack({ bins, items, options: { algorithm: 'wall-building' } })
+```
+
+**Best for:**
+- Container loading
+- Delivery-order packing
+- Long containers
+
+**How it works:**
+Creates vertical "walls" perpendicular to the loading direction. Good for sequential unloading.
+
+## EB-AFIT
+
+Enhanced Best-fit algorithm with multiple heuristics.
+
+```typescript
+pack({ bins, items, options: { algorithm: 'eb-afit' } })
+```
+
+**Best for:**
+- Complex packing problems
+- Maximum space utilization
+- When time budget allows
+
+**How it works:**
+Evaluates multiple placement options using various scoring functions. More computationally intensive but often achieves better utilization.
+
+## Enhancers
+
+Algorithms can be enhanced with metaheuristics:
+
+```typescript
+pack({
+  bins,
+  items,
+  options: {
+    algorithm: 'extreme-point',
+    enhancer: 'genetic',        // Use genetic algorithm
+    timeBudgetMs: 5000          // Allow 5 seconds
+  }
+})
+```
+
+Available enhancers:
+- `genetic` - Genetic algorithm
+- `simulated-annealing` - Simulated annealing
+- `tabu-search` - Tabu search
+
+## Performance Tips
+
+1. **Start with `extreme-point`** - It's fast and produces good results
+2. **Use `layer-building` for pallets** - Better stability
+3. **Try `eb-afit` with time budget** - For maximum utilization
+4. **Add enhancers sparingly** - They add computation time

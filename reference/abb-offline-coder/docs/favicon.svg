@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="abb-offline-coder">
+  <title>abb-offline-coder</title>
+
+  <!-- 暖奶白底，与页面同色 -->
+  <rect width="32" height="32" rx="5" fill="#efeae3"/>
+
+  <!-- 极细蓝图网格（仅 4 条，呼应页面背景），透明度低不抢眼 -->
+  <g stroke="#1a1a1a" stroke-width="0.4" opacity="0.08">
+    <line x1="0"  y1="8"  x2="32" y2="8" />
+    <line x1="0"  y1="24" x2="32" y2="24"/>
+    <line x1="8"  y1="0"  x2="8"  y2="32"/>
+    <line x1="24" y1="0"  x2="24" y2="32"/>
+  </g>
+
+  <!-- 喷嘴本体 (黑色机械感) -->
+  <rect x="13" y="4" width="6" height="3" fill="#131313"/>
+  <!-- 喷嘴口（橙色高亮） -->
+  <rect x="14.5" y="6.6" width="3" height="0.8" fill="#d94a1f"/>
+
+  <!-- 喷雾扇面 — 工业橙梯形 -->
+  <path d="M 13 7.4 L 19 7.4 L 24.5 20.5 L 7.5 20.5 Z" fill="#d94a1f"/>
+
+  <!-- 扇面纹理（更深的橙线条暗示气雾） -->
+  <g stroke="#a73813" stroke-width="0.4" opacity="0.55">
+    <line x1="16"   y1="8"  x2="11"   y2="20"/>
+    <line x1="16"   y1="8"  x2="16"   y2="20"/>
+    <line x1="16"   y1="8"  x2="21"   y2="20"/>
+  </g>
+
+  <!-- 被涂表面（黑色横条） -->
+  <rect x="5" y="23.5" width="22" height="3.5" fill="#131313"/>
+
+  <!-- 工件参考标记（左下小橙点 — 工程图常见 datum 标） -->
+  <circle cx="7.5" cy="29" r="1" fill="#d94a1f"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="abb-offline-coder">
+  <title>abb-offline-coder</title>
+  <!-- 极简版：在 16x16 浏览器标签上也能识别 -->
+
+  <!-- 奶白圆角底 -->
+  <rect width="32" height="32" rx="6" fill="#efeae3"/>
+
+  <!-- 黑色喷嘴块（顶部） -->
+  <rect x="12" y="3" width="8" height="4" fill="#131313"/>
+
+  <!-- 工业橙喷雾扇面（中部主体） -->
+  <path d="M 12 7 L 20 7 L 26 22 L 6 22 Z" fill="#d94a1f"/>
+
+  <!-- 黑色被涂表面（底部） -->
+  <rect x="4" y="24" width="24" height="5" fill="#131313"/>
+</svg>

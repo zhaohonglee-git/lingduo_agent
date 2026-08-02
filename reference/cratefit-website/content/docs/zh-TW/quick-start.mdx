@@ -1,0 +1,120 @@
+---
+title: 快速開始
+description: 使用 CrateFit 建立你的第一個裝箱解決方案。
+order: 3
+---
+
+## 基本裝箱
+
+使用 CrateFit 最簡單的方式是透過 `pack()` 函數：
+
+```typescript
+import { pack } from '@cratefit/pack';
+
+// 定義容器（bins）
+const bins = [
+  {
+    id: 'container-1',
+    type: 'box',
+    width: 100,
+    height: 100,
+    depth: 100
+  }
+];
+
+// 定義要裝入的物品
+const items = [
+  { id: 'item-1', width: 50, height: 30, depth: 40, quantity: 2 },
+  { id: 'item-2', width: 60, height: 40, depth: 30 },
+  { id: 'item-3', width: 20, height: 20, depth: 20, quantity: 5 }
+];
+
+// 將物品裝入容器
+const result = pack({ bins, items });
+
+// 查看結果
+console.log(`使用容器數：${result.stats.totalBins}`);
+console.log(`已裝物品數：${result.stats.packedItems}`);
+console.log(`利用率：${(result.stats.avgUtilization * 100).toFixed(1)}%`);
+```
+
+## 理解結果
+
+`pack()` 函數回傳一個 `PackResult` 物件：
+
+```typescript
+interface PackResult {
+  packed: PackedBin[];      // 成功裝箱的容器
+  unpacked: ItemSpec[];     // 無法裝入的物品
+  stats: PackStats;         // 統計摘要
+}
+```
+
+每個 `PackedBin` 包含：
+
+```typescript
+interface PackedBin {
+  bin: BinSpec;             // 使用的容器
+  items: PlacedItem[];      // 帶有位置的物品
+  utilization: number;      // 體積利用率 (0-1)
+  weight: number;           // 總重量
+}
+```
+
+## 選擇演算法
+
+CrateFit 包含多種針對不同場景優化的演算法：
+
+```typescript
+const result = pack({
+  bins,
+  items,
+  options: {
+    algorithm: 'extreme-point'  // 預設，通用性能良好
+    // algorithm: 'layer-building'  // 適合尺寸一致的物品
+    // algorithm: 'eb-afit'  // 適合混合尺寸的物品
+  }
+});
+```
+
+## 加入限制條件
+
+實際裝箱通常需要考慮限制條件：
+
+```typescript
+const items = [
+  {
+    id: 'heavy-item',
+    width: 50,
+    height: 50,
+    depth: 50,
+    weight: 100,
+    maxStackWeight: 50,      // 頂部可承受的最大重量
+    requiresFloor: true      // 必須放在底部
+  },
+  {
+    id: 'fragile-item',
+    width: 30,
+    height: 30,
+    depth: 30,
+    rotationType: 'fixed'    // 不允許旋轉
+  }
+];
+
+const bins = [
+  {
+    id: 'container',
+    type: 'box',
+    width: 200,
+    height: 200,
+    depth: 200,
+    maxWeight: 500           // 容器重量限制
+  }
+];
+```
+
+## 下一步
+
+- 查看 [API 參考](/docs/api-reference) 獲得完整文件
+- 探索[範例](/docs/examples)了解實際應用案例
+- 試試[互動式 Demo](/demo) 視覺化裝箱結果

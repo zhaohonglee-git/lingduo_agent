@@ -1,0 +1,10 @@
+{
+  "name": "lingduo-pack-service",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Node.js CLI wrapper for @cratefit/pack - called by Python backend as LLM tool",
+  "dependencies": {
+    "@cratefit/pack": "^0.1.1"
+  }
+}

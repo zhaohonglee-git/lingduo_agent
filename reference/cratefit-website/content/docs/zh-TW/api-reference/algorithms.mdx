@@ -1,0 +1,101 @@
+---
+title: 演算法
+description: CrateFit 提供的裝箱演算法。
+order: 12
+---
+
+## 概述
+
+CrateFit 提供多種針對不同場景優化的演算法。請根據你的使用情境選擇。
+
+## Extreme Point
+
+預設演算法。通用性能良好。
+
+```typescript
+pack({ bins, items, options: { algorithm: 'extreme-point' } })
+```
+
+**適用場景：**
+- 混合尺寸的物品
+- 一般裝箱問題
+- 需要穩定結果時
+
+**運作原理：**
+維護一個「極端點」列表，作為物品可放置的位置。根據評分策略為每個物品選擇最佳位置。
+
+## Layer Building
+
+從底部到頂部建立水平層。
+
+```typescript
+pack({ bins, items, options: { algorithm: 'layer-building' } })
+```
+
+**適用場景：**
+- 棧板裝載
+- 高度相似的物品
+- 注重穩定性的裝箱
+
+**運作原理：**
+按高度相似性將物品分組成層。完全填滿一層後再開始下一層。
+
+## Wall Building
+
+從一端到另一端建立垂直牆。
+
+```typescript
+pack({ bins, items, options: { algorithm: 'wall-building' } })
+```
+
+**適用場景：**
+- 貨櫃裝載
+- 按配送順序裝箱
+- 長型容器
+
+**運作原理：**
+建立垂直於裝載方向的「牆」。適合需要按順序卸貨的情境。
+
+## EB-AFIT
+
+使用多種啟發式策略的增強型最佳適配演算法。
+
+```typescript
+pack({ bins, items, options: { algorithm: 'eb-afit' } })
+```
+
+**適用場景：**
+- 複雜的裝箱問題
+- 追求最大空間利用率
+- 時間預算充足時
+
+**運作原理：**
+使用各種評分函數評估多個放置選項。運算較密集，但通常能達到更高的利用率。
+
+## 增強器
+
+演算法可以透過元啟發式方法增強：
+
+```typescript
+pack({
+  bins,
+  items,
+  options: {
+    algorithm: 'extreme-point',
+    enhancer: 'genetic',        // 使用基因演算法
+    timeBudgetMs: 5000          // 允許 5 秒運算時間
+  }
+})
+```
+
+可用的增強器：
+- `genetic` - 基因演算法
+- `simulated-annealing` - 模擬退火
+- `tabu-search` - 禁忌搜索
+
+## 效能建議
+
+1. **從 `extreme-point` 開始** - 速度快且結果良好
+2. **棧板裝載使用 `layer-building`** - 穩定性更好
+3. **設定時間預算使用 `eb-afit`** - 追求最高利用率
+4. **謹慎使用增強器** - 會增加運算時間
