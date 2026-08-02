@@ -1,122 +1,98 @@
-# 灵垛 LingDuo — AI + 混合码垛算法开发与仿真平台
+# 灵垛 LingDuo — AI 装箱码垛平台
 
-🏗️ 面向高校机器人、自动化、AI 专业的 Web 端实训教学平台。
+自然语言驱动的 3D 装箱码垛仿真平台。基于 AgentScope 2.0 + @cratefit/pack。
 
-以**码垛**这一典型工业场景为载体，融合 LLM、运筹优化、3D 仿真、机器人离线编程等技术，提供从自然语言需求到完整码垛方案的一站式实验环境。
+## 架构
+
+```
+┌──────────────────────────────────────────┐
+│  前端 (cratefit-website demo)            │
+│  ┌────────────┐  ┌────────────────────┐  │
+│  │ ChatSidebar│  │ 3D Viewer (cratefit)│ │
+│  │ (Agent 对话)│  │ ViewerControls      │ │
+│  │            │  │ StatsPanel          │  │
+│  └────────────┘  └────────────────────┘  │
+└──────────────────────────────────────────┘
+        │ SSE (/api/chat)
+        ▼
+┌──────────────────────────────────────────┐
+│  后端 (AgentScope 2.0)                   │
+│  ┌────────────────────────────────────┐  │
+│  │  PackAgent (ReActAgent)            │  │
+│  │  ├── Model: DashScope Qwen         │  │
+│  │  ├── Tools: MCP 封装               │  │
+│  │  │   @cratefit/pack                │  │
+│  │  └── Event Stream → SSE            │  │
+│  └────────────────────────────────────┘  │
+│  ┌────────────────────────────────────┐  │
+│  │  pack_tool.mjs (Node.js)           │  │
+│  │  @cratefit/pack 完整 CLI 封装      │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+```
 
 ## 技术栈
 
 | 层 | 技术 |
 |---|---|
-| 前端 | React 19 + TypeScript + Vite |
-| 3D 可视化 | @cratefit/viz + Three.js |
-| 码垛算法 | @cratefit/pack（浏览器端执行） |
 | Agent 框架 | AgentScope 2.0 (Python) |
-| LLM | DashScope / Qwen（可切换） |
-| 后端 | FastAPI + SSE 流式推送 |
-
-## 项目结构
-
-```
-lingduo_agent/
-├── frontend/                # React 前端
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ChatInterface/   # 聊天面板
-│   │   │   ├── ThreeScene/      # 3D 码垛场景
-│   │   │   └── Layout/          # 整体布局
-│   │   ├── hooks/               # useSSE, usePalletizing
-│   │   ├── services/            # API 调用
-│   │   └── types/               # TypeScript 类型
-│   └── package.json
-├── backend/                 # Python 后端
-│   ├── agents/
-│   │   └── supervisor.py        # 主控 Agent
-│   ├── api/
-│   │   └── routes.py            # FastAPI 路由
-│   └── main.py                  # 入口
-└── docker-compose.yml
-```
+| LLM | DashScope / Qwen |
+| 前端 | Next.js 16 + React 19 (TypeScript) |
+| 3D 可视化 | @cratefit/viz + Three.js |
+| 装箱算法 | @cratefit/pack |
+| 后端 | FastAPI + SSE |
 
 ## 快速开始
 
 ### 前置要求
 
-- **Node.js** >= 18
-- **Python** >= 3.11
-- **DashScope API Key**（[阿里云百炼](https://bailian.console.aliyun.com/)）
+- Node.js >= 18
+- Python >= 3.11
+- DashScope API Key
 
-### 1. 启动后端
+### 1. 后端
 
 ```bash
 cd backend
-
-# 安装依赖
+cp .env.example .env   # 编辑填入 DASHSCOPE_API_KEY
 pip install -r requirements.txt
-
-# 配置 API Key
-cp .env.example .env
-# 编辑 .env，填入 DASHSCOPE_API_KEY
-
-# 启动（默认 :8000）
-python main.py
+python main.py          # → http://localhost:8000
 ```
 
-验证后端：
-```bash
-curl http://localhost:8000/api/health
-# → {"status": "ok", "service": "lingduo-agent"}
-```
-
-### 2. 启动前端
+### 2. 前端
 
 ```bash
-cd frontend
-
-# 安装依赖
+cd reference/cratefit-website
 npm install
-
-# 启动开发服务器（默认 :5173）
-npm run dev
+npm run dev             # → http://localhost:3000
 ```
 
 ### 3. 使用
 
-1. 打开浏览器访问 `http://localhost:5173`
-2. 在左侧聊天框输入码垛需求，例如：
+打开 `http://localhost:3000`，在左侧聊天框输入码垛需求：
 
-> 用EUR托盘码放400×300×200mm的箱子25个，堆高不超过1800mm
+> 用EUR托盘码放400×300×200mm的箱子25个
 
-3. 观察 Agent 思考过程实时流式显示
-4. 右侧 3D 场景展示码垛结果（拖拽旋转、滚轮缩放）
+Agent 自动解析需求 → 填入配置 → 右侧 3D 场景展示结果。
 
-### Docker 部署
+## 项目结构
 
-```bash
-# 设置 API Key
-export DASHSCOPE_API_KEY=your_key_here
-
-# 启动
-docker compose up -d
 ```
-
-## Phase 1 实现范围
-
-- [x] 前端项目骨架（React 19 + TypeScript + Vite）
-- [x] 后端 AgentScope 意图解析 Agent
-- [x] FastAPI SSE 流式事件推送
-- [x] 聊天界面（流式思考过程展示）
-- [x] @cratefit/pack 码垛计算（浏览器端）
-- [x] @cratefit/viz 3D 场景渲染
-- [x] Docker 容器化配置
-
-## 后续阶段
-
-- Phase 2: 多智能体编排（AgentScope Agent Team）
-- Phase 3: RAG 知识库 + 多轮对话调整
-- Phase 4: Jinja2 机器人代码生成（ABB/KUKA/FANUC）
-- Phase 5: UI 打磨（码垛动画、新手引导、算法对比）
-
-## License
-
-待定
+lingduo_agent/
+├── backend/                       # Python 后端 (AgentScope 2.0)
+│   ├── main.py                    # FastAPI 入口 + SSE
+│   ├── agent.py                   # PackAgent (LLM → 装箱配置)
+│   ├── pack_api.py                # MCP 工具封装
+│   ├── tools/
+│   │   ├── pack_tool.mjs          # Node.js @cratefit/pack CLI
+│   │   └── pack-service/          # npm 依赖
+│   └── requirements.txt
+├── reference/
+│   ├── cratefit-website/          # 前端 (demo only)
+│   │   ├── app/                   # Next.js pages
+│   │   ├── components/demo/       # 装箱组件 + ChatSidebar
+│   │   └── lib/                   # demo-store, utils
+│   └── abb-offline-coder/         # 机器人代码生成参考
+├── docker-compose.yml
+└── prd.md
+```

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Sparkles, ChevronDown, Box, Package, LayoutGrid } from 'lucide-react';
+import { Sparkles, ChevronDown, Box, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDemoStore } from '@/lib/stores/demo-store';
 import {
@@ -12,7 +12,6 @@ import {
   type DemoExample,
   type ExampleCategory,
 } from '@/lib/demo-examples';
-import { WelcomeModal } from './WelcomeModal';
 
 interface ExampleSelectorProps {
   mode?: 'compact' | 'full';
@@ -24,7 +23,6 @@ export function ExampleSelector({ mode = 'compact', onSelect }: ExampleSelectorP
   const loadConfig = useDemoStore((s) => s.loadConfig);
   const selectedExampleId = useDemoStore((s) => s.selectedExampleId);
   const [isOpen, setIsOpen] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Get selected example
@@ -158,17 +156,6 @@ export function ExampleSelector({ mode = 'compact', onSelect }: ExampleSelectorP
 
       {isOpen && (
         <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-md border bg-popover p-1 shadow-lg">
-          {/* Browse All Button */}
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              setShowWelcome(true);
-            }}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-sm font-medium text-primary hover:bg-accent"
-          >
-            <LayoutGrid className="h-4 w-4" />
-            {t('browseAllExamples')}
-          </button>
           <div className="my-1 border-t" />
 
           <div className="max-h-72 overflow-y-auto">
@@ -205,8 +192,6 @@ export function ExampleSelector({ mode = 'compact', onSelect }: ExampleSelectorP
         </div>
       )}
 
-      {/* Welcome Modal */}
-      {showWelcome && <WelcomeModal forceOpen onClose={() => setShowWelcome(false)} />}
     </div>
   );
 }
