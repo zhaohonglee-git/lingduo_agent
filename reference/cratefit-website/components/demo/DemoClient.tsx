@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDemoStore } from '@/lib/stores/demo-store';
@@ -12,6 +12,7 @@ import { StatsPanel } from './StatsPanel';
 
 export function DemoClient() {
   const t = useTranslations('demo');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { result, mode, onlinePlacedItems, runPack, autoPack, loadConfig, currentBinIndex, setCurrentBinIndex } = useDemoStore();
   const firstBin = useDemoStore((s) => s.bins[0]);
   const initialPackDone = useRef(false);
@@ -75,9 +76,9 @@ export function DemoClient() {
 
   return (
     <div className="flex h-full">
-      {/* === Left Sidebar: Chat (AgentScope Agent 主交互界面) === */}
-      <div className="w-[380px] flex-shrink-0 h-full">
-        <ChatSidebar />
+      {/* === Left Sidebar: Chat (可折叠) === */}
+      <div className={`${sidebarCollapsed ? 'w-12' : 'w-[380px]'} flex-shrink-0 h-full transition-all duration-200`}>
+        <ChatSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* === Right: 3D Viewer + Stats === */}

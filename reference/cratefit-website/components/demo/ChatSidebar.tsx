@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Bot, User, ChevronDown } from 'lucide-react';
+import { Send, Loader2, Bot, User, ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useDemoStore } from '@/lib/stores/demo-store';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +12,12 @@ const ITEM_COLORS = [
   '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
 ];
 
-export function ChatSidebar() {
+interface ChatSidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export function ChatSidebar({ collapsed, onToggle }: ChatSidebarProps) {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'ai'; text: string }>>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -128,16 +133,48 @@ export function ChatSidebar() {
   // Summary of current config
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
 
+  // Collapsed state
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col items-center border-r bg-card py-3 w-12">
+        <button
+          onClick={onToggle}
+          className="rounded-md p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          title="展开 Agent 面板"
+        >
+          <PanelLeftOpen className="h-5 w-5" />
+        </button>
+        <div className="mt-3 flex flex-col items-center gap-1 text-xs text-muted-foreground">
+          <Bot className="h-5 w-5 text-primary" />
+        </div>
+        {totalItems > 0 && (
+          <div className="mt-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+            {totalItems}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col bg-card border-r">
       {/* Header */}
       <div className="flex-shrink-0 border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <div>
-            <h2 className="font-semibold text-sm">灵垛 Agent</h2>
-            <p className="text-xs text-muted-foreground">AI + 混合码垛算法平台</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary" />
+            <div>
+              <h2 className="font-semibold text-sm">灵垛 Agent</h2>
+              <p className="text-xs text-muted-foreground">AI + 混合码垛算法平台</p>
+            </div>
           </div>
+          <button
+            onClick={onToggle}
+            className="rounded-md p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="折叠 Agent 面板"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
