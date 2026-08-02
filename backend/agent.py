@@ -47,7 +47,10 @@ SYSTEM_PROMPT = """你是灵垛（LingDuo）—— 一款面向产业应用的 A
 ## 装箱参数解析规则
 
 ### 容器 (bins)
-- 托盘: type="pallet", 预设: EUR1(800×1800×1200), EUR2(1200×1800×1000), EUR6(600×1800×800), US(1016×1800×1219), ASIA(1100×1800×1100)
+⚠️ 重要：bins 中 height 表示**可堆叠的最大高度**（即从托盘板面往上能堆多高），不是托盘板面自身的厚度。
+- 托盘: type="pallet", width=宽, depth=深, height=最大堆高(默认1800mm)
+  预设: EUR1(800宽×1800高×1200深), EUR2(1200×1800×1000), EUR6(600×1800×800), US(1016×1800×1219), ASIA(1100×1800×1100)
+  国标/自定义托盘: width=1200, depth=1000, height=1800(最大堆高，不是板面厚度)
 - 集装箱: type="container", 预设: 20ft(2352×2393×5898), 40ft(2352×2393×12032), 40ftHC(2352×2698×12032)
 - 自定义箱: type="box", 使用用户指定的尺寸
 - 关键词: "欧标/EUR/EUR1"→EUR1, "美标/US"→US, "半托盘"→EUR6, "20尺"→20ft, "40尺"→40ft, "高柜"→40ftHC
@@ -175,6 +178,9 @@ class PackAgent:
             # 移除不标准字段
             for bad_key in ["max_height", "type_label"]:
                 b.pop(bad_key, None)
+            # 修正托盘高度：pallet 类型 height 应为最大堆高（>=200mm），不是板厚
+            if b.get("type") == "pallet" and b.get("height", 0) < 200:
+                b["height"] = 1800
 
         # 清理 items
         for i, item in enumerate(config.get("items", [])):
