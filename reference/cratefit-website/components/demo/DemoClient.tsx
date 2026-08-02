@@ -77,7 +77,7 @@ export function DemoClient() {
   return (
     <div className="flex h-full">
       {/* === Left Sidebar: Chat (可折叠) === */}
-      <div className={`${sidebarCollapsed ? 'w-12' : 'w-[380px]'} flex-shrink-0 h-full transition-all duration-200`}>
+      <div className={`${sidebarCollapsed ? 'w-12' : 'w-[480px]'} flex-shrink-0 h-full transition-all duration-200`}>
         <ChatSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 

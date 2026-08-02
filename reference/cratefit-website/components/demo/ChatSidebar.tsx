@@ -171,7 +171,7 @@ export function ChatSidebar({ collapsed, onToggle }: ChatSidebarProps) {
             <Bot className="h-5 w-5 text-primary" />
             <div>
               <h2 className="font-semibold text-sm">灵垛 Agent</h2>
-              <p className="text-xs text-muted-foreground">AI + 混合码垛算法平台</p>
+              <p className="text-xs text-muted-foreground">AI+混合码垛算法策略计算平台</p>
             </div>
           </div>
           <button
